@@ -94,6 +94,18 @@ td input[type=date]{padding:3px 6px}
 .tabs button.on{color:var(--blue);border-color:var(--blue)}
 .email{border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-bottom:8px;background:#fff}
 .email .meta{font:12px var(--mono);color:var(--muted)}
+.sec{font:600 12px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 4px}
+.ci{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.ct{flex:1;min-width:220px;font-weight:500}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{padding:10px 14px;border:0;border-right:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:14px;min-width:64px}
+.seg button:last-child{border-right:0}
+.seg .on-Met{background:var(--okbg);color:var(--ok)}.seg .on-Partly{background:var(--warnbg);color:var(--warn)}.seg .on-Notmet{background:var(--errbg);color:var(--err)}.seg .on-NA{background:var(--greybg);color:var(--grey)}
+.big{font-size:15px!important;padding:9px 10px!important;border:1px solid var(--line);border-radius:6px;background:#fff}
+.btn.big{padding:12px 20px;font-size:15px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{background:var(--infobg);color:var(--info);border-radius:14px;padding:4px 6px 4px 12px;font-size:13.5px;display:inline-flex;gap:6px;align-items:center}
+.pill button{all:unset;cursor:pointer;padding:0 6px;color:var(--muted)}
 @media (max-width:860px){.layout{grid-template-columns:1fr}nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}nav .grp{display:none}nav button{white-space:nowrap}main{padding:18px 16px 60px}.grid2{grid-template-columns:1fr}.kv{grid-template-columns:120px 1fr}}
 @media print{.shell,nav,.noprint{display:none!important}.layout{display:block}main{padding:0}.card,.tbl{border:0}}
 </style>
@@ -126,7 +138,7 @@ const CODES=[
  {id:'GREY',name:'Code Grey',meaning:'Aggressive or violent person',color:'#9AA3B2',reviewer:'Security Services'},
  {id:'SILVER',name:'Code Silver',meaning:'Person with a weapon',color:'#C9D1DA',reviewer:'Security Services'},
  {id:'GREEN',name:'Code Green',meaning:'Evacuation',color:'#2E9E5B',reviewer:'Facilities Engineering'},
- {id:'IT',name:'IT downtime',meaning:'Loss of IT systems / downtime procedures',color:'#753BBD',reviewer:'IT Services'}];
+ {id:'IT',name:'Utility / IT failure',meaning:'IT downtime, power, water or medical gas failure',color:'#753BBD',reviewer:'Facilities Engineering'}];
 const FREQ={M:'Monthly',Q:'Quarterly',Q3:'Quarterly, each shift',H:'Twice a year',Y:'Yearly','-':'Not required'};
 /* Rows = code, columns = area (DH, AH, RT, UD, AB, RAC). Blue/Brown monthly, Pink quarterly, IT yearly come
    from the 21 Oct session; the rest are sample values to confirm with EPPU. */
@@ -161,6 +173,50 @@ const CODE_PROP={RED:{DH:'SFP',AH:'AHF',RT:'RTF',RAC:'RAS'},BLUE:{DH:'RES',AH:'A
  SILVER:{DH:'SEC',AH:'AHE'},GREEN:{DH:'FAC',AH:'AHF'},IT:{DH:'ITS',AH:'ITS',RT:'ITS',UD:'ITS',AB:'ITS',RAC:'ITS'}};
 const proponentFor=(c,a)=>(CODE_PROP[c]&&CODE_PROP[c][a])||LOCAL[a]||'SFP';
 const REASONS=['Clinical surge / high census','Staff shortage','Clash with another event or audit','Facility or equipment not available','Request from department head','Weather','Drill not completed - redo','Other'];
+/* ---------- Step 2 lists: scripts (UC4) and drill day (UC5) ---------- */
+const LOCS={DH:['Ward 3B','Ward 4A','Pod C','Building 61'],AH:['Ward 2A','Ward 1C'],RT:['Wing A'],UD:['Wing B'],AB:['Wing A'],RAC:['Building 7']};
+const HVA=['Power outage','Mass casualty incident','Internal fire','IT system failure','Medical gas failure','Hazardous material spill','Infant or child abduction','Violent person','Sandstorm / severe weather','Bomb threat'];
+const ROLES=['Incident commander','Drill controller','Evaluator / observer','Simulator (actor)','Unit charge nurse','Responding team','Security officer','Facilities technician','Switchboard','Safety officer'];
+const GAP_TYPES=['Staff / training','Communication','Equipment','Facility','Policy / procedure','IT system','Supplies','Security'];
+const CHK_GENERIC=[['Activation',['Code called correctly and promptly','Page / notification heard in all affected areas']],
+ ['Communication',['Incident commander identified, roles clear','Radio and phone communication worked']],
+ ['Safety',['Patients and staff kept safe during the drill','Exits and corridors kept clear']],
+ ['Wrap-up',['All clear announced','Hot debrief held with participants']]];
+const CHK_CODE={RED:['RACE followed','Correct extinguisher used (PASS)','Fire doors closed'],BLUE:['CPR started within 1 minute','Defibrillator applied within 3 minutes','Code team arrived within 5 minutes'],
+ PINK:['Exits locked down within 5 minutes','Description of the child shared to all posts','CCTV reviewed'],BROWN:['Area isolated','Spill kit used correctly','Safety data sheet checked'],
+ ORANGE:['Triage area set up','Triage tags used','Extra staff called in'],YELLOW:['Bomb threat checklist completed by call taker','Search done with radios off near the item','Police notified'],
+ GREY:['Security arrived within 5 minutes','De-escalation attempted','Others moved to safety'],SILVER:['Run-hide-fight message announced','Affected zone locked down','Police notified'],
+ GREEN:['Evacuation route used','Headcount at assembly point','Patients moved with their records'],IT:['Downtime / backup procedure started','Backup supply or paper forms available','Facilities and IT notified']};
+function checklist(c){const l=[...CHK_GENERIC.slice(0,1),['Response',CHK_CODE[c]],...CHK_GENERIC.slice(1)];let n=0;return l.map(([sec,items])=>({sec,items:items.map(t=>({k:'i'+(++n),t}))}))}
+/* Scenario templates (HSEEP-style story + event list), filled per drill */
+function tpl(d){const h=hash(d.id),L=LOCS[d.area],loc=L[h%L.length],age=3+h%7,kid=['girl','boy'][h%2],adult=['man','woman'][h%2],aage=38+h%30,sh=d.shift?d.shift.toLowerCase()+' shift':'day shift',
+ E=(t,event,expected,role)=>({t,event,expected,role});
+ const T={
+ RED:{hva:'Internal fire',story:`Smoke is reported from a linen cart in the corridor of ${loc} during the ${sh}. A nurse sees it and pulls the fire alarm.`,obj:['Staff follow RACE within 2 minutes','Fire doors closed and corridor cleared','Horizontal evacuation of 4 patients'],
+  ev:[E(0,`Simulator places a smoke card on the linen cart in ${loc}`,'Nurse raises the alarm and calls the switchboard','Simulator (actor)'),E(1,`Switchboard pages Code Red ${loc}`,'Staff apply RACE and close doors','Switchboard'),E(3,'Fire team arrives','Assess and use the extinguisher (PASS)','Responding team'),E(6,'Controller: smoke spreads to the next room','Move 4 patients to the next compartment','Unit charge nurse'),E(9,'Visitors try to enter the corridor','Security keeps the area closed','Security officer'),E(14,'Fire reported out','All clear paged and headcount done','Incident commander')]},
+ BLUE:{hva:'Mass casualty incident',story:`A ${aage}-year-old ${adult} visiting ${loc} collapses in the waiting area and is unresponsive with no pulse.`,obj:['CPR within 1 minute','Defibrillator within 3 minutes','Handover to the code team'],
+  ev:[E(0,`Simulator: the ${adult} collapses in the waiting area of ${loc}`,'Staff check response and call Code Blue','Simulator (actor)'),E(1,'Code Blue paged','CPR started, crash cart brought','Unit charge nurse'),E(3,'Code team arrives','Team leader takes over','Responding team'),E(4,'Monitor shows a shockable rhythm','Shock given, CPR resumed','Responding team'),E(10,'Pulse returns (simulated)','Transfer to ED arranged','Incident commander'),E(15,'End of drill','Hot debrief','Drill controller')]},
+ PINK:{hva:'Infant or child abduction',story:`A mother reports that her ${age}-year-old ${kid} is missing from ${loc} at 10:15. The ${kid} was last seen near the play corner.`,obj:['Exits locked within 5 minutes','Description shared to all posts','Child found and identity confirmed'],
+  ev:[E(0,`Simulator (mother) tells the nurse her ${age}-year-old ${kid} is missing`,'Nurse calls Code Pink with a description','Simulator (actor)'),E(1,'Code Pink paged','All exits staffed, no one leaves with a child','Security officer'),E(4,`Security shares the description: ${age}-year-old ${kid} in a red shirt`,'All posts confirm they received it','Security officer'),E(8,'CCTV shows the child near the east stairwell','Search team sent to the stairwell','Incident commander'),E(12,'Child found with a visitor','Identity checked with the mother','Unit charge nurse'),E(15,'All clear','Debrief','Drill controller')]},
+ BROWN:{hva:'Hazardous material spill',story:`A 5-litre container of formalin breaks in the corridor of ${loc}. Two staff report eye irritation.`,obj:['Area isolated quickly','Spill kit used correctly','Exposed staff sent for assessment'],
+  ev:[E(0,`Simulator drops a marked container in ${loc}`,'Staff move away and call Code Brown','Simulator (actor)'),E(2,'Code Brown paged','Area isolated, ventilation checked','Unit charge nurse'),E(5,'Spill team arrives','Safety data sheet checked, spill kit used','Responding team'),E(10,'Two staff report eye irritation','Eye wash and referral to ED','Safety officer'),E(16,'Spill cleaned','Waste bagged and labelled; all clear','Incident commander')]},
+ ORANGE:{hva:'Mass casualty incident',story:`A bus accident on the highway near ${area(d.area).name}: 12 casualties are expected within 20 minutes.`,obj:['Triage area ready before the first patient','Extra staff called in','Bed status reported'],
+  ev:[E(0,'Switchboard receives the alert from the Red Crescent','Code Orange activated','Switchboard'),E(3,'Incident command post opened','Roles handed out with action cards','Incident commander'),E(10,'Triage area ready at the entrance','Triage tags available','Responding team'),E(20,'First 4 casualties arrive (actors)','Triage and treatment areas used','Simulator (actor)'),E(35,'Bed and staff status requested','Report sent to command post','Unit charge nurse'),E(50,'Last casualty treated','Stand down and debrief','Drill controller')]},
+ YELLOW:{hva:'Bomb threat',story:`The switchboard receives a phone call saying a bomb has been placed in ${loc}.`,obj:['Bomb threat checklist completed','Search done safely','Police notified'],
+  ev:[E(0,'Simulator calls the switchboard with the threat','Call taker completes the checklist','Simulator (actor)'),E(2,'Code Yellow paged','Staff search their own area, radios off','Unit charge nurse'),E(8,'Suspicious bag found','Area cleared, no one touches it','Security officer'),E(12,'Police informed (simulated)','Cordon kept','Incident commander'),E(20,'Bag cleared (simulated)','All clear','Drill controller')]},
+ GREY:{hva:'Violent person',story:`A relative becomes aggressive at the nurse station of ${loc}, shouting and throwing objects.`,obj:['Security within 5 minutes','De-escalation tried','Others moved to safety'],
+  ev:[E(0,'Simulator starts shouting at the nurse station','Staff keep distance and call Code Grey','Simulator (actor)'),E(1,'Code Grey paged','Patients and visitors moved away','Unit charge nurse'),E(4,'Security arrives','De-escalation','Security officer'),E(9,'Person calms down','Escorted out; incident report','Security officer'),E(12,'End','Debrief','Drill controller')]},
+ SILVER:{hva:'Violent person',story:`A person with a knife is reported in the lobby of ${loc}.`,obj:['Run-hide-fight message announced','Zone locked down','Police notified'],
+  ev:[E(0,'Simulator reported in the lobby','Staff call Code Silver','Simulator (actor)'),E(1,'Code Silver paged with location','Run, hide or lock doors','Switchboard'),E(3,'Security sets a cordon','No one enters the lobby','Security officer'),E(10,'Police arrive (simulated)','Handover to police','Incident commander'),E(18,'All clear','Debrief','Drill controller')]},
+ GREEN:{hva:'Power outage',story:`A water leak above the electrical room near ${loc} forces the evacuation of the unit.`,obj:['Evacuation route used','Headcount at the assembly point','Patients moved with their records'],
+  ev:[E(0,`Facilities reports a leak near ${loc}`,'Code Green called by the incident commander','Facilities technician'),E(2,'Code Green paged','Staff prepare patients by priority','Unit charge nurse'),E(6,'First patients moved','Records and medicines go with patients','Responding team'),E(15,'Unit empty','Headcount at the assembly point','Incident commander'),E(20,'End','Debrief','Drill controller')]},
+ IT:d.area==='DH'?{hva:'Medical gas failure',story:`The oxygen pressure alarm sounds in ${loc}. Pipeline supply drops and patients on oxygen need backup cylinders.`,obj:['Backup cylinders to patients within 10 minutes','Facilities and switchboard informed','Radio contact with the facilities control room'],
+  ev:[E(0,`Oxygen alarm panel in ${loc} shows low pressure (simulated)`,'Charge nurse checks patients on oxygen','Simulator (actor)'),E(2,'Code called for medical gas failure','Facilities called by radio','Unit charge nurse'),E(5,'Facilities technician arrives','Checks the zone valve and manifold','Facilities technician'),E(8,'Backup cylinders brought','Cylinders connected to patients','Responding team'),E(20,'Pipeline supply back (simulated)','All clear','Incident commander')]}
+  :{hva:'IT system failure',story:`The electronic health record is down in ${loc} for 2 hours during the morning clinic.`,obj:['Downtime forms used','Results passed by phone','Data entered after recovery'],
+  ev:[E(0,'IT announces the downtime','Staff switch to paper forms','Switchboard'),E(5,'Lab results needed for a patient','Results phoned and read back','Unit charge nurse'),E(30,'Medication order needed','Paper order and double check','Responding team'),E(120,'System back','Back-entry of data','Incident commander')]}};
+ const t=T[d.code],rs=[...new Set(['Drill controller','Evaluator / observer',...t.ev.map(e=>e.role)])],pool=STAFF.filter(s=>s.area===d.area);
+ return{...t,loc,roles:rs.map((r,i)=>({role:r,badge:pool[(h+i*7)%pool.length].badge}))}}
+const staff=b=>STAFF.find(s=>s.badge===b);
 /* Approximate 2026 Saudi public holidays (sample) */
 const HOLIDAYS=[['2026-02-22','2026-02-22','Founding Day'],['2026-03-19','2026-03-24','Eid al-Fitr (approx.)'],['2026-05-25','2026-05-30','Eid al-Adha (approx.)'],['2026-09-23','2026-09-23','National Day']];
 const RAMADAN=['2026-02-18','2026-03-19'];
@@ -201,13 +257,13 @@ function periods(f){const o=[];
  return o}
 
 /* ---------- State ---------- */
-function fresh(){return{v:1,demoDate:'2025-12-01',planStatus:'Not started',freq:JSON.parse(JSON.stringify(DEFAULT_FREQ)),
- settings:{approvalMode:'area',earlierOff:true,maxPerWeek:3,minGap:14,pickDeadline:'2025-12-18'},
+function fresh(){return{v:2,demoDate:'2025-12-01',planStatus:'Not started',freq:JSON.parse(JSON.stringify(DEFAULT_FREQ)),
+ settings:{approvalMode:'area',earlierOff:true,maxPerWeek:3,minGap:14,pickDeadline:'2025-12-18',scriptLead:30,scriptDue:14,requireScript:true,hvaRequired:false},
  drills:[],units:{},changes:[],emails:[],seq:0,role:'admin',dept:'SFP',sentAt:null}}
-function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===1)return s}}catch(e){}return fresh()}
+function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===2)return s}}catch(e){}return fresh()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let S=load();
-const UI={page:'overview',f:{area:'',code:'',month:'',status:'',q:'',mine:true},drawer:null,modal:null,ds:'depts',dsq:'',ml:'freq'};
+const UI={page:'overview',f:{area:'',code:'',month:'',status:'',q:'',mine:true},drawer:null,modal:null,ds:'depts',dsq:'',ml:'freq',sid:null,rid:null,pq:''};
 let SILENT=false;
 
 const ADMIN='Huda Al-Ghamdi (EPPU coordinator)',OEMC='Dr. Faisal Al-Mutairi (OEMC chair)';
@@ -215,7 +271,8 @@ const dept=id=>DEPTS.find(d=>d.id===id)||{id,name:id,head:'',area:''};
 const code=id=>CODES.find(c=>c.id===id);
 const area=id=>AREAS.find(a=>a.id===id);
 const drill=id=>S.drills.find(d=>d.id===id);
-const me=()=>S.role==='admin'?ADMIN:S.role==='oemc'?OEMC:`${dept(S.dept).head} (${dept(S.dept).name})`;
+const OBSERVER='Nadia Al-Harthi (EPPU observer)';
+const me=()=>S.role==='admin'?ADMIN:S.role==='oemc'?OEMC:S.role==='observer'?OBSERVER:`${dept(S.dept).head} (${dept(S.dept).name})`;
 const eff=d=>d.current||d.planned;
 const unitOf=d=>S.settings.approvalMode==='area'?d.area:'ALL';
 const unitIds=()=>S.settings.approvalMode==='area'?AREAS.map(a=>a.id):['ALL'];
@@ -224,7 +281,7 @@ const unit=u=>S.units[u]||(S.units[u]={status:'Draft'});
 function log(d,text){d.history.push({at:S.demoDate,who:me(),text})}
 function mail(to,subject,body){S.emails.unshift({at:S.demoDate,to,subject,body})}
 function toast(m){if(SILENT)return;const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
-function done(m){if(SILENT)return;save();if(m)toast(m);render()}
+function done(m){if(SILENT)return;tick();save();if(m)toast(m);render()}
 function fail(m){if(!SILENT)toast(m);return false}
 
 /* ---------- Business rules: date check ---------- */
@@ -251,8 +308,38 @@ const warns=d=>eff(d)&&!['Completed'].includes(d.status)?check(d,eff(d),'plan').
 function canEditDate(d){if(S.planStatus==='Not started')return false;const u=unit(unitOf(d)).status;
  if(!['Draft','Returned'].includes(u)||!['Open','Date proposed'].includes(d.status))return false;
  return S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept)}
-const canChange=d=>(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept))&&(d.status==='Scheduled'&&d.current>S.demoDate||d.status==='Redo required');
-const canRecord=d=>S.role==='admin'&&d.status==='Scheduled'&&d.current<=S.demoDate;
+const canChange=d=>(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept)||(S.role==='observer'&&d.current<=S.demoDate))&&(d.status==='Scheduled'||d.status==='Redo required');
+const isDue=d=>d.status==='Scheduled'&&d.current<=S.demoDate;
+const scriptOk=d=>!S.settings.requireScript||(d.script&&d.script.status==='Approved');
+const canRecord=d=>['admin','observer'].includes(S.role)&&isDue(d);
+const canRun=d=>canRecord(d)&&scriptOk(d);
+
+/* ---------- Business rules: scripts (UC4) ---------- */
+function newScript(d){return{status:'Requested',requestedAt:S.demoDate,due:addDays(eff(d),-S.settings.scriptDue),story:'',objectives:['','',''],hva:'',location:'',map:null,roles:[],events:[],rounds:[],submittedAt:null,approvedAt:null,warnings:[]}}
+function fillTemplate(d){const t=tpl(d),s=d.script;Object.assign(s,{story:t.story,objectives:t.obj.slice(),hva:t.hva,location:t.loc,events:t.ev.map(e=>({...e})),roles:t.roles.map(r=>({...r}))})}
+/* Request the script N days before the drill (setting); runs whenever state changes */
+function tick(){S.drills.forEach(d=>{if(d.original&&!d.script&&['Scheduled','Change pending'].includes(d.status)&&addDays(eff(d),-S.settings.scriptLead)<=S.demoDate){
+ d.script=newScript(d);log(d,`Script template requested from the proponent, due ${fmt(d.script.due)}`);
+ mail(`${dept(d.dept).head} <${d.dept}>`,`Write the drill script for ${d.id}`,`The drill is on ${fmt(eff(d))}. Please submit the scenario and event list by ${fmt(d.script.due)}.`)}})}
+const canEditScript=d=>d.script&&['Requested','Draft','Returned'].includes(d.script.status)&&(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept));
+function facts(t){t=(t||'').toLowerCase();const G={girl:'F',woman:'F',female:'F',boy:'M',man:'M',male:'M'};
+ return{ages:[...t.matchAll(/(\d+)[- ]year[- ]old/g)].map(m=>m[1]),gen:[...t.matchAll(/\b(girl|boy|woman|man|female|male)\b/g)].map(m=>G[m[1]]),locs:[...t.matchAll(/\b(ward|pod|wing|building)\s+([a-z0-9]+)\b/g)].map(m=>m[1]+' '+m[2])}}
+function checkScript(d){const s=d.script,e=[],w=[];
+ if(!s.story||s.story.length<30)e.push('Write the scenario story (a sentence or two at least)');
+ if(!s.objectives.filter(x=>x.trim()).length)e.push('Add at least one objective');
+ if(S.settings.hvaRequired&&!s.hva)e.push('Link the script to a ranked hazard (HVA) - required by setting');
+ if(!s.events.length)e.push('Add the event list');
+ s.events.forEach((x,i)=>{if(!x.event.trim())e.push(`Event ${i+1}: describe what happens`);if(!x.role)e.push(`Event ${i+1}: pick a role`);
+  else if(!s.roles.some(r=>r.role===x.role))w.push(`Event ${i+1}: role "${x.role}" is not in the roles table`);if(!x.expected.trim())w.push(`Event ${i+1}: no expected action`)});
+ for(let i=1;i<s.events.length;i++)if(+s.events[i].t<+s.events[i-1].t)w.push(`Event ${i+1} is earlier than event ${i}; minutes should go forward`);
+ ['Drill controller','Evaluator / observer'].forEach(r=>{if(!s.roles.some(x=>x.role===r&&x.badge))e.push(`Assign a person as ${r}`)});
+ s.roles.forEach(r=>{if(!r.badge&&!['Drill controller','Evaluator / observer'].includes(r.role))w.push(`No person assigned to ${r.role}`)});
+ const F=facts(s.story),gn=g=>g==='F'?'female':'male';
+ s.events.forEach((x,i)=>{const f=facts(x.event+' '+x.expected);
+  f.ages.forEach(a=>{if(F.ages.length&&!F.ages.includes(a))w.push(`Story vs event ${i+1}: event says ${a}-year-old, story says ${F.ages.join(', ')}-year-old`)});
+  [...new Set(f.gen)].forEach(g=>{if(F.gen.length&&!F.gen.includes(g))w.push(`Story vs event ${i+1}: event says ${gn(g)}, story says ${gn(F.gen[0])}`)});
+  f.locs.forEach(l=>{if(F.locs.length&&!F.locs.includes(l))w.push(`Story vs event ${i+1}: event mentions ${l}, story is in ${F.locs.join(', ')}`)})});
+ return{e,w:[...new Set(w)]}}
 
 /* ---------- Actions ---------- */
 const A={
@@ -318,7 +405,49 @@ const A={
    log(d,`Recorded as NOT completed: ${reason}. A redo must be done by ${fmt(monthEnd(+d.current.slice(5,7)))}.`);
    mail(`${dept(d.dept).head} <${d.dept}>`,`Redo needed: ${d.id}`,`The drill on ${fmt(d.current)} was not completed (${reason}). Request a redo date in the same month.`)}
   UI.modal=null;done(`${d.id}: ${result.toLowerCase()}`)},
- setRole(r){S.role=r;UI.f.mine=true;done()},setDept(k){S.dept=k;done()},
+ /* --- UC4 scripts --- */
+ openScript(id){UI.sid=id;UI.page='script';UI.drawer=null;render();window.scrollTo(0,0)},
+ sSet(id,k,v){const d=drill(id);if(!canEditScript(d))return;d.script[k]=v;if(d.script.status==='Requested')d.script.status='Draft';save();refreshCheck(id)},
+ sObj(id,i,v){const d=drill(id);if(!canEditScript(d))return;d.script.objectives[i]=v;save();refreshCheck(id)},
+ sEv(id,i,k,v){const d=drill(id);if(!canEditScript(d))return;d.script.events[i][k]=k==='t'?Math.max(0,+v||0):v;if(d.script.status==='Requested')d.script.status='Draft';save();refreshCheck(id)},
+ sRole(id,i,k,v){const d=drill(id);if(!canEditScript(d))return;d.script.roles[i][k]=v;save();if(k==='role')render();else refreshCheck(id)},
+ sAdd(id,what){const d=drill(id);if(!canEditScript(d))return;const s=d.script;if(s.status==='Requested')s.status='Draft';
+  if(what==='event'){const last=s.events[s.events.length-1];s.events.push({t:last?+last.t+2:0,event:'',expected:'',role:''})}
+  if(what==='role')s.roles.push({role:'Responding team',badge:''});if(what==='obj')s.objectives.push('');done()},
+ sDel(id,what,i){const d=drill(id);if(!canEditScript(d))return;d.script[what].splice(i,1);done()},
+ sTemplate(id){const d=drill(id);if(!canEditScript(d))return;if((d.script.story||d.script.events.length)&&!confirm('Replace what you wrote with the template for this code?'))return;
+  fillTemplate(d);d.script.status='Draft';log(d,'Script started from the template');done('Template loaded. Edit it to fit your unit.')},
+ sMap(id,input){const d=drill(id),f=input.files&&input.files[0];if(!f||!canEditScript(d))return;const rd=new FileReader();
+  rd.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,900/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;
+   c.getContext('2d').drawImage(img,0,0,c.width,c.height);d.script.map=c.toDataURL('image/jpeg',.72);done('Map added')};img.src=rd.result};rd.readAsDataURL(f)},
+ sSubmit(id){const d=drill(id);if(!canEditScript(d))return fail('You cannot submit this script');const r=checkScript(d);if(r.e.length)return fail(`Fix ${r.e.length} problem(s) first: ${r.e[0]}`);
+  const s=d.script;s.status='Submitted';s.submittedAt=S.demoDate;s.warnings=r.w;log(d,`Script submitted to OEMC${r.w.length?` with ${r.w.length} warning(s)`:''}`);
+  mail('OEMC <oemc>',`Review drill script ${d.id}`,`${me()} submitted the script for ${d.id} (${fmt(eff(d))}). ${r.w.length} warning(s) from the automatic check.`);done('Script sent to OEMC')},
+ sDecide(id,ok,comment){const d=drill(id),s=d.script;if(S.role!=='oemc'||s.status!=='Submitted')return fail('Only OEMC reviews submitted scripts');if(!ok&&!comment)return fail('Add comments for the proponent');
+  s.rounds.push({at:S.demoDate,by:OEMC,decision:ok?'Approved':'Returned',comment:comment||''});s.status=ok?'Approved':'Returned';if(ok)s.approvedAt=S.demoDate;
+  log(d,ok?`Script approved by OEMC (round ${s.rounds.length})`:`Script returned by OEMC: ${comment}`);
+  mail(`${dept(d.dept).head} <${d.dept}>`,`Script ${d.id} ${ok?'approved':'returned'}`,ok?'You can run the drill as planned.':comment);UI.modal=null;done(ok?'Script approved':'Script returned to the proponent')},
+ /* --- UC5 drill day --- */
+ openRun(id){const d=drill(id);if(!canRecord(d))return fail('This drill is not due yet');if(!scriptOk(d))return fail('The script must be approved before drill day (setting)');
+  if(d.run&&d.run.result){d.prevRun=d.run;d.run=null}
+  if(!d.run)d.run={observer:me(),start:'09:00',end:'',checks:{},participants:[],findings:[],result:null};UI.rid=id;UI.page='run';UI.drawer=null;UI.pq='';save();render();window.scrollTo(0,0)},
+ rSet(id,k,v){const d=drill(id);d.run[k]=v;save()},
+ rCheck(id,k,v){const d=drill(id);const c=d.run.checks[k]||(d.run.checks[k]={v:'',note:''});c.v=c.v===v?'':v;save();render()},
+ rNote(id,k,v){const d=drill(id);(d.run.checks[k]||(d.run.checks[k]={v:'',note:''})).note=v;save()},
+ rAdd(id,b){const d=drill(id);if(!d.run.participants.includes(b))d.run.participants.push(b);UI.pq='';done()},
+ rAddDept(id,k){const d=drill(id);let n=0;STAFF.filter(s=>s.dept===k).forEach(s=>{if(!d.run.participants.includes(s.badge)){d.run.participants.push(s.badge);n++}});done(`${n} people added`)},
+ rDel(id,b){const d=drill(id);d.run.participants=d.run.participants.filter(x=>x!==b);done()},
+ rFinding(id){const d=drill(id),t=val('f-t'),ty=val('f-ty');if(!t)return fail('Describe the finding');
+  d.run.findings.push({text:t,type:ty,gap:document.getElementById('f-g').checked});done('Finding added')},
+ rFDel(id,i){drill(id).run.findings.splice(i,1);done()},
+ rFinish(id,result){const d=drill(id),r=d.run,items=checklist(d.code).flatMap(s=>s.items);
+  if(result==='Postponed'){UI.modal={type:'change',id};return render()}
+  if(result==='Completed'){const miss=items.filter(i=>!(r.checks[i.k]&&r.checks[i.k].v)).length;if(miss)return fail(`Answer all checklist items (${miss} left)`);if(!r.participants.length)return fail('Add at least one participant');if(!r.end)return fail('Enter the end time')}
+  const why=result==='Not completed'?val('r-why'):'';if(result==='Not completed'&&!why)return fail('Say why the drill was not completed');
+  r.result=result;r.date=d.current;r.observer=me();SILENT=true;A.record(id,result,why);SILENT=false;
+  log(d,`Drill day record: ${r.participants.length} participants, ${r.findings.length} finding(s)${r.findings.filter(f=>f.gap).length?`, ${r.findings.filter(f=>f.gap).length} flagged as possible gap`:''}`);
+  UI.page='day';done(`${d.id}: ${result.toLowerCase()}. The record is saved.`)},
+ setRole(r){S.role=r;UI.f.mine=true;if(['script','run'].includes(UI.page))UI.page='overview';done()},setDept(k){S.dept=k;done()},
  setDate0(v){if(!v)return;S.demoDate=v;done(`Demo date set to ${fmt(v)}`)},
  reset(kind){if(!SILENT&&!confirm('Throw away your changes in this browser and load the sample data again?'))return;
   const role=S.role,dp=S.dept;S=kind==='mid'?buildMid():fresh();S.role=role;S.dept=dp;UI.drawer=null;UI.modal=null;UI.page='overview';
@@ -333,7 +462,7 @@ const A={
 
 /* ---------- Mid-year example: same actions, replayed ---------- */
 function buildMid(){SILENT=true;S=fresh();const R=mulberry(7);
- S.role='admin';A.generate();A.suggest('all');unitIds().forEach(u=>A.submit(u));
+ S.role='admin';A.generate();A.suggest('all');drill('IT-DH-Y').planned='2026-04-14';unitIds().forEach(u=>A.submit(u));
  S.demoDate='2025-12-22';S.role='oemc';unitIds().forEach(u=>A.approve(u));S.role='admin';S.demoDate='2025-12-28';A.sendMOH();
  const today='2026-07-15';const okDay=c=>dow(c)<5&&!holiday(c);
  const past=S.drills.filter(d=>d.current<today).sort((a,b)=>a.current<b.current?-1:1);
@@ -346,10 +475,37 @@ function buildMid(){SILENT=true;S=fresh();const R=mulberry(7);
    if(r>.975){let to=null;for(let k=3;k<20;k++){const c=addDays(d.notDoneDate,k);if(c.slice(0,7)===d.notDoneDate.slice(0,7)&&c<today&&okDay(c)){to=c;break}}
     if(to){S.role='proponent';S.dept=d.dept;if(A.requestChange(d.id,to,'Drill not completed - redo','Redo agreed with the unit','redo')){S.role='oemc';A.decide(S.changes[0].id,true,'');S.role='admin';S.demoDate=to;A.record(d.id,'Completed')}}}}
   else A.record(d.id,'Completed')}
+ /* Step 2 history: an approved script and a drill-day record for every drill already held */
+ const R2=mulberry(11);
+ S.drills.forEach(d=>{const ran=d.doneDate||d.notDoneDate;if(!ran)return;S.demoDate=addDays(d.original,-S.settings.scriptLead);d.script=newScript(d);fillTemplate(d);
+  const s=d.script,r=R2(),late=r<.12,two=r<.3;s.due=addDays(d.original,-S.settings.scriptDue);s.submittedAt=addDays(d.original,late?-9:-20);s.status='Approved';
+  if(two)s.rounds.push({at:addDays(s.submittedAt,2),by:OEMC,decision:'Returned',comment:'Add the expected action for each event and name the observer.'});
+  s.approvedAt=addDays(s.submittedAt,two?6:3);s.rounds.push({at:s.approvedAt,by:OEMC,decision:'Approved',comment:''});
+  d.history.push({at:s.submittedAt,who:dept(d.dept).head,text:'Script submitted to OEMC'},{at:s.approvedAt,who:OEMC,text:`Script approved (round ${s.rounds.length})`});
+  const pool=STAFF.filter(x=>x.area===d.area),n=Math.min(pool.length,6+Math.floor(R2()*10)),ps=new Set();while(ps.size<n)ps.add(pool[Math.floor(R2()*pool.length)].badge);
+  const checks={},findings=[],failed=!d.doneDate||d.doneDate!==ran;
+  checklist(d.code).forEach(sec=>sec.items.forEach(it=>{const x=R2();const v=x<.82?'Met':x<.94?'Partly':x<.985?'Not met':'N/A';checks[it.k]={v,note:''};
+   if(v==='Not met'||(v==='Partly'&&R2()<.4)){const ty=sec.sec==='Communication'?'Communication':sec.sec==='Safety'?'Facility':sec.sec==='Response'?(R2()<.5?'Staff / training':'Equipment'):'Policy / procedure';
+    checks[it.k].note='See findings';findings.push({text:`${it.t}: ${v==='Not met'?'not done':'only partly done'}`,type:ty,gap:v==='Not met'})}}));
+  d.run={observer:OBSERVER,start:'09:00',end:'09:'+pad(20+Math.floor(R2()*30)),checks,participants:[...ps],findings,result:d.status==='Completed'?'Completed':'Not completed',date:d.doneDate||ran};
+  if(failed&&d.notDoneDate)d.prevRun={...d.run,result:'Not completed',date:d.notDoneDate}});
+ const gas=drill('IT-DH-Y');if(gas.run){gas.run.findings.unshift({text:'Radio not transmitting from the nurse station to the facilities control room; the nurse had to walk to the next unit to call',type:'Facility',gap:true});gas.run.checks.i7={v:'Not met',note:'Radio failed at the nurse station'}}
  S.demoDate=today;
  const fut=S.drills.filter(d=>d.status==='Scheduled'&&d.current>addDays(today,5)).sort((a,b)=>a.current<b.current?-1:1);
  [0,7,15,24].forEach((i,j)=>{const d=fut[i];if(!d)return;let to=null;for(let k=3;k<20;k++){const c=addDays(d.current,k);if(c<=d.end&&okDay(c)){to=c;break}}
   if(to){S.role='proponent';S.dept=d.dept;A.requestChange(d.id,to,REASONS[[1,3,4,0][j]],['Two nurses on leave that week','Fire panel upgrade in that wing','CPH asked for the week after','High census expected'][j],'change')}});
+ /* Upcoming scripts in every state, incl. a Code Pink script whose event list contradicts the story */
+ S.demoDate=addDays(today,-3);tick();S.demoDate=today;tick();
+ const up=S.drills.filter(d=>d.script&&d.script.status==='Requested').sort((a,b)=>eff(a)<eff(b)?-1:1);
+ up.forEach((d,i)=>{if(i%5===4)return;fillTemplate(d);const s=d.script;
+  if(i<4){s.status='Approved';s.submittedAt=addDays(today,-9);s.approvedAt=addDays(today,-6);s.rounds.push({at:s.approvedAt,by:OEMC,decision:'Approved',comment:''})}
+  else if(i<8){s.status='Submitted';s.submittedAt=addDays(today,-1);s.warnings=checkScript(d).w}
+  else if(i===8){s.status='Returned';s.submittedAt=addDays(today,-6);s.rounds.push({at:addDays(today,-2),by:OEMC,decision:'Returned',comment:'Objective 3 is not tested by any event. Add an event for it.'})}
+  else s.status='Draft'});
+ const pk=S.drills.filter(d=>d.code==='PINK'&&d.status==='Scheduled'&&eff(d)>today).sort((a,b)=>eff(a)<eff(b)?-1:1)[0];
+ if(pk){S.demoDate=today;if(!pk.script)pk.script=newScript(pk);fillTemplate(pk);const ev=pk.script.events[2],m=ev.event.match(/(\d+)-year-old (girl|boy)/);
+  ev.event=ev.event.replace(m[0],`${+m[1]+1}-year-old ${m[2]==='girl'?'boy':'girl'}`);const s=pk.script;s.status='Submitted';s.submittedAt=addDays(today,-1);s.warnings=checkScript(pk).w;
+  pk.history.push({at:s.submittedAt,who:dept(pk.dept).head,text:`Script submitted to OEMC with ${s.warnings.length} warning(s)`})}
  S.role='admin';S.dept='SFP';SILENT=false;return S}
 
 /* ---------- Rendering helpers ---------- */
@@ -363,8 +519,14 @@ function kpi(){const ds=S.drills,due=ds.filter(d=>eff(d)&&eff(d)<=S.demoDate&&d.
  const required=ds.length||CODES.reduce((n,c)=>n+AREAS.reduce((m,a)=>m+periods(S.freq[c.id][a.id]).length,0),0);
  return{required,dated:ds.filter(d=>d.planned).length,approved:ds.filter(d=>d.original).length,due:due.length,comp:comp.length,held,
   pend:S.changes.filter(c=>c.status==='Pending').length,appr:S.changes.filter(c=>c.status==='Approved').length,
-  redo:ds.filter(d=>d.status==='Redo required'||(d.status==='Change pending'&&d.notDoneDate&&!d.redo)).length}}
-function counts(){return{appr:S.role==='oemc'?unitIds().filter(u=>unit(u).status==='Submitted').length+S.changes.filter(c=>c.status==='Pending').length:0}}
+  redo:ds.filter(d=>d.status==='Redo required'||(d.status==='Change pending'&&d.notDoneDate&&!d.redo)).length,
+  ...(()=>{const ap=ds.filter(d=>d.script&&d.script.status==='Approved'),onT=ap.filter(d=>d.script.approvedAt<=d.script.due).length,
+   rounds=ap.reduce((n,d)=>n+d.script.rounds.length,0),seen=new Set();ds.forEach(d=>[d.run,d.prevRun].forEach(r=>r&&r.result&&r.participants.forEach(b=>seen.add(b))));
+   return{sAppr:ap.length,sOnTime:onT,sRounds:ap.length?(rounds/ap.length).toFixed(1):'—',sOpen:ds.filter(d=>d.script&&d.script.status!=='Approved').length,
+    sLate:ds.filter(d=>d.script&&d.script.status!=='Approved'&&d.script.due<S.demoDate).length,staffIn:seen.size}})()}}
+function counts(){const sc=S.drills.filter(d=>d.script&&(S.role==='oemc'?d.script.status==='Submitted':S.role==='proponent'?d.dept===S.dept&&['Requested','Draft','Returned'].includes(d.script.status):false)).length;
+ return{appr:S.role==='oemc'?unitIds().filter(u=>unit(u).status==='Submitted').length+S.changes.filter(c=>c.status==='Pending').length:0,scripts:sc,
+  day:S.role==='observer'?S.drills.filter(canRun).length:0}}
 
 /* ---------- Pages ---------- */
 function pOverview(){const k=kpi(),todo=[];
@@ -375,13 +537,18 @@ function pOverview(){const k=kpi(),todo=[];
   unitIds().filter(u=>['Draft','Returned'].includes(unit(u).status)&&S.drills.some(d=>unitOf(d)===u)&&S.drills.filter(d=>unitOf(d)===u).every(d=>d.planned))
    .forEach(u=>todo.push([`${unitName(u)} is ready for OEMC${unit(u).status==='Returned'?' (was returned: '+esc(unit(u).comment)+')':''}.`,`<button class="btn primary" onclick="A.submit('${u}')">Submit</button>`]));
   if(S.planStatus==='Approved')todo.push(['The whole plan is approved. Send the copy to MOH and Aramco MSMD.',`<button class="btn primary" onclick="A.go('moh')">Review and send</button>`]);
-  const rec=S.drills.filter(canRecord).length;if(rec)todo.push([`${rec} drills have taken place and need an outcome.`,`<button class="btn" onclick="UI.f={area:'',code:'',month:'',status:'Due',q:'',mine:false};A.go('plan')">Record outcomes</button>`])}
+  if(k.sLate)todo.push([`${k.sLate} drill scripts are past their due date and not approved yet.`,`<button class="btn" onclick="A.go('scripts')">Open scripts</button>`]);
+  const rec=S.drills.filter(isDue).length;if(rec)todo.push([`${rec} drills have reached their date without a drill-day record. Observers record them on the Drill day page.`,`<button class="btn" onclick="A.go('day')">Drill day</button>`])}
+ if(S.role==='observer'){const due=S.drills.filter(isDue);due.forEach(d=>todo.push([`${cdot(d.code)}<b>${d.id}</b> ${code(d.code).name} in ${area(d.area).name} was due ${fmtd(d.current)}.${scriptOk(d)?'':' <span class="e">Script not approved.</span>'}`,`<button class="btn primary" onclick="A.openRun('${d.id}')" ${scriptOk(d)?'':'disabled'}>Open drill day</button>`]));
+  if(!due.length)todo.push([`No drill is due today. Move the demo date to a drill date, or load the mid-year example.`,`<button class="btn" onclick="A.go('day')">Upcoming drills</button>`])}
  if(S.role==='proponent'){const mine=S.drills.filter(d=>d.dept===S.dept);
   const op=mine.filter(d=>canEditDate(d)&&!d.planned).length;if(op)todo.push([`Pick dates for ${op} of your drills.`,`<button class="btn" onclick="A.go('plan')">Open my drills</button> <button class="btn primary" onclick="A.suggest('mine')">Suggest dates</button>`]);
   const rd=mine.filter(d=>d.status==='Redo required');rd.forEach(d=>todo.push([`${d.id} was not completed on ${fmt(d.notDoneDate)}. Request a redo date in the same month.`,`<button class="btn primary" onclick="A.modal('redo','${d.id}')">Request redo</button>`]));
+  mine.filter(d=>canEditScript(d)).forEach(d=>todo.push([`Script for <b>${d.id}</b> (${fmt(eff(d))}) is ${d.script.status.toLowerCase()}, due ${fmt(d.script.due)}${d.script.due<S.demoDate?' <span class="e">overdue</span>':''}.`,`<button class="btn primary" onclick="A.openScript('${d.id}')">${d.script.status==='Requested'?'Write script':'Open script'}</button>`]));
   if(!mine.length)todo.push(['This department is not a proponent for any drill. Pick another department in the header.',''])}
  if(S.role==='oemc'){unitIds().filter(u=>unit(u).status==='Submitted').forEach(u=>todo.push([`${unitName(u)} is waiting for your approval.`,`<button class="btn primary" onclick="A.go('approvals')">Review</button>`]));
-  const p=S.changes.filter(c=>c.status==='Pending').length;if(p)todo.push([`${p} change request(s) waiting for a decision.`,`<button class="btn primary" onclick="A.go('approvals')">Review</button>`])}
+  const p=S.changes.filter(c=>c.status==='Pending').length;if(p)todo.push([`${p} change request(s) waiting for a decision.`,`<button class="btn primary" onclick="A.go('approvals')">Review</button>`]);
+  S.drills.filter(d=>d.script&&d.script.status==='Submitted').forEach(d=>todo.push([`Script for <b>${d.id}</b> (${fmt(eff(d))}) is waiting for review.${d.script.warnings.length?` <span class="w">⚠ ${d.script.warnings.length} warning(s)</span>`:''}`,`<button class="btn primary" onclick="A.openScript('${d.id}')">Review script</button>`]))}
  const heat=AREAS.map(a=>{const row=MON.map((m,i)=>S.drills.filter(d=>d.area===a.id&&eff(d)&&+eff(d).slice(5,7)===i+1).length);return[a.id,row]});
  const mx=Math.max(1,...heat.flatMap(h=>h[1]));
  return`<h1>Drill plan ${YEAR}</h1><p class="sub">Status ${chip(S.planStatus)} · Viewing as <b>${esc(me())}</b> · Demo date ${fmtd(S.demoDate)}</p>
@@ -393,6 +560,8 @@ function pOverview(){const k=kpi(),todo=[];
   <div class="tile ${k.comp?(k.held/k.comp>=.9?'good':'bad'):''}"><div class="k">Held on approved date</div><div class="v">${pct(k.held,k.comp)}</div><div class="h">target above 90%</div></div>
   <div class="tile"><div class="k">Change requests</div><div class="v">${k.pend}</div><div class="h">pending · ${k.appr} approved</div></div>
   <div class="tile ${k.redo?'bad':''}"><div class="k">Redo outstanding</div><div class="v">${k.redo}</div><div class="h">not completed, redo in same month</div></div>
+  <div class="tile ${k.sAppr?(k.sOnTime/k.sAppr>=.9?'good':'bad'):''}"><div class="k">Scripts approved on time</div><div class="v">${pct(k.sOnTime,k.sAppr)}</div><div class="h">${k.sAppr} approved · ${k.sRounds} review rounds on average</div></div>
+  <div class="tile"><div class="k">Staff in at least 1 drill</div><div class="v">${pct(k.staffIn,STAFF.length)}</div><div class="h">${k.staffIn} of ${STAFF.length} staff</div></div>
  </div>
  <div class="card"><h2>Your to-do</h2><div class="todo">${todo.length?todo.map(([t,b])=>`<div class="it"><div>${t}</div><div class="row">${b}</div></div>`).join(''):'<div class="muted">Nothing waiting for you. Try another role in the header.</div>'}</div></div>
  <div class="grid2"><div class="card"><h2>Progress by ${S.settings.approvalMode==='area'?'area':'plan'}</h2><div class="tbl"><table><thead><tr><th>Area</th><th>Drills</th><th>Dated</th><th>Warnings</th><th>Approval</th></tr></thead><tbody>
@@ -403,7 +572,7 @@ function pOverview(){const k=kpi(),todo=[];
  </tbody></table></div><p class="muted" style="font-size:13px;margin:8px 0 0">Counts by current date. Watch for crowded months such as the Ramadan and Eid weeks.</p></div></div>`}
 
 function filtered(){const f=UI.f;return S.drills.filter(d=>(!f.area||d.area===f.area)&&(!f.code||d.code===f.code)&&
- (!f.month||(eff(d)||d.start).slice(5,7)===f.month)&&(!f.status||(f.status==='Warnings'?warns(d).length:f.status==='Due'?canRecord(d):d.status===f.status))&&
+ (!f.month||(eff(d)||d.start).slice(5,7)===f.month)&&(!f.status||(f.status==='Warnings'?warns(d).length:f.status==='Due'?isDue(d):d.status===f.status))&&
  (!(S.role==='proponent'&&f.mine)||d.dept===S.dept)&&(!f.q||(d.id+' '+dept(d.dept).name).toLowerCase().includes(f.q.toLowerCase())))
  .sort((a,b)=>a.area.localeCompare(b.area)||((eff(a)||a.start)<(eff(b)||b.start)?-1:1))}
 function pPlan(){if(S.planStatus==='Not started')return`<h1>Annual plan</h1><div class="card">The ${YEAR} plan has not been generated yet. ${S.role==='admin'?`<button class="btn primary" onclick="A.generate()">Generate ${YEAR} slots</button>`:'Switch to the EPPU admin role to generate it.'}</div>`;
@@ -417,12 +586,12 @@ function pPlan(){if(S.planStatus==='Not started')return`<h1>Annual plan</h1><div
  ${S.drills.some(canEditDate)?`<button class="btn" onclick="A.suggest('${S.role==='admin'?'all':'mine'}')">Suggest dates for open slots</button>`:''}</div>
  <div id="tbl"></div>`}
 function renderTable(){const el=document.getElementById('tbl');if(!el)return;const rows=filtered();
- el.innerHTML=`<div class="muted" style="font-size:13px;margin-bottom:6px">${rows.length} drills</div><div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Required period</th><th>Proponent</th><th>Date</th><th>Original approved</th><th>Status</th><th></th></tr></thead><tbody>
+ el.innerHTML=`<div class="muted" style="font-size:13px;margin-bottom:6px">${rows.length} drills</div><div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Required period</th><th>Proponent</th><th>Date</th><th>Original approved</th><th>Status</th><th>Script</th><th></th></tr></thead><tbody>
  ${rows.map(d=>{const w=warns(d);return`<tr class="click" onclick="A.open('${d.id}')"><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${d.area}</td>
  <td>${d.label}${d.shift?' · '+d.shift:''}</td><td>${esc(dept(d.dept).name)}</td>
  <td onclick="event.stopPropagation()">${canEditDate(d)?`<input type="date" min="${d.start}" max="${d.end}" value="${d.planned||''}" onchange="A.setDate('${d.id}',this.value)">`:fmtd(eff(d))}${w.length?` <span class="w" title="${esc(w.join('\n'))}">⚠ ${w.length}</span>`:''}</td>
- <td>${d.original?(d.original!==d.current?`<s class="muted">${fmt(d.original)}</s>`:fmt(d.original)):'—'}</td><td>${chip(d.status)}</td>
- <td onclick="event.stopPropagation()">${canRecord(d)?`<button class="btn sm" onclick="A.modal('outcome','${d.id}')">Outcome</button>`:canChange(d)?`<button class="btn sm" onclick="A.modal('${d.status==='Redo required'?'redo':'change'}','${d.id}')">${d.status==='Redo required'?'Redo':'Change'}</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="9" class="muted">No drills match the filters.</td></tr>'}
+ <td>${d.original?(d.original!==d.current?`<s class="muted">${fmt(d.original)}</s>`:fmt(d.original)):'—'}</td><td>${chip(d.status)}</td><td>${d.script?chip(d.script.status):''}</td>
+ <td onclick="event.stopPropagation()">${canRun(d)?`<button class="btn sm primary" onclick="A.openRun('${d.id}')">Drill day</button>`:canChange(d)?`<button class="btn sm" onclick="A.modal('${d.status==='Redo required'?'redo':'change'}','${d.id}')">${d.status==='Redo required'?'Redo':'Change'}</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No drills match the filters.</td></tr>'}
  </tbody></table></div>`}
 
 function pApprovals(){const pend=S.changes.filter(c=>c.status==='Pending');
@@ -446,6 +615,97 @@ function pChanges(){const k=kpi();const byR={};S.changes.forEach(c=>byR[c.reason
  ${Object.keys(byR).length?`<div class="card"><h2>Requests by reason</h2>${Object.entries(byR).sort((a,b)=>b[1]-a[1]).map(([r,n])=>`<div class="row" style="gap:10px;margin:4px 0"><div style="width:240px">${esc(r)}</div><div style="height:12px;border-radius:3px;background:var(--blue);width:${n*24}px"></div><span class="mono">${n}</span></div>`).join('')}</div>`:''}
  <div class="card"><h2>All requests</h2>${S.changes.length?changeTable(S.changes,S.role==='oemc'):'<p class="muted">No change requests yet. Open an approved drill and choose "Request change".</p>'}</div>`}
 
+/* ---------- Step 2 pages: scripts (UC4) ---------- */
+function pScripts(){const sf=UI.sf||'all',all=S.drills.filter(d=>d.script&&(S.role!=='proponent'||!UI.f.mine||d.dept===S.dept)),k=kpi();
+ const F={all:['All',()=>true],write:['To write',d=>['Requested','Draft','Returned'].includes(d.script.status)],review:['In review',d=>d.script.status==='Submitted'],
+  ok:['Approved',d=>d.script.status==='Approved'],late:['Overdue',d=>d.script.status!=='Approved'&&d.script.due<S.demoDate]};
+ const rows=all.filter(F[sf][1]).sort((a,b)=>eff(a)<eff(b)?-1:1);
+ return`<h1>Drill scripts</h1><p class="sub">The app asks the proponent for a script ${S.settings.scriptLead} days before each approved drill (setting). The script is due ${S.settings.scriptDue} days before the drill and needs OEMC approval. Each script has a story, objectives, roles and a minute-by-minute event list.</p>
+ <div class="kpis"><div class="tile ${k.sAppr?(k.sOnTime/k.sAppr>=.9?'good':'bad'):''}"><div class="k">Approved on time</div><div class="v">${pct(k.sOnTime,k.sAppr)}</div><div class="h">${k.sOnTime} of ${k.sAppr} approved by the due date</div></div>
+ <div class="tile"><div class="k">Review rounds</div><div class="v">${k.sRounds}</div><div class="h">average per approved script</div></div>
+ <div class="tile ${k.sLate?'bad':''}"><div class="k">Overdue</div><div class="v">${k.sLate}</div><div class="h">past due, not approved</div></div></div>
+ <div class="tabs">${Object.entries(F).map(([key,[l,fn]])=>`<button class="${sf===key?'on':''}" onclick="UI.sf='${key}';render()">${l} (${all.filter(fn).length})</button>`).join('')}</div>
+ ${S.role==='proponent'?`<label class="row" style="gap:6px;margin-bottom:10px"><input type="checkbox" ${UI.f.mine?'checked':''} onchange="UI.f.mine=this.checked;render()"> Only my department</label>`:''}
+ <div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Drill date</th><th>Proponent</th><th>Requested</th><th>Due</th><th>Status</th><th>Rounds</th><th>Check</th><th></th></tr></thead><tbody>
+ ${rows.map(d=>{const s=d.script,late=s.status!=='Approved'&&s.due<S.demoDate;return`<tr class="click" onclick="A.openScript('${d.id}')"><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${fmtd(eff(d))}</td><td>${esc(dept(d.dept).name)}</td>
+ <td>${fmt(s.requestedAt)}</td><td class="${late?'e':''}">${fmt(s.due)}</td><td>${chip(s.status)}</td><td>${s.rounds.length||''}</td><td>${s.warnings&&s.warnings.length&&s.status==='Submitted'?`<span class="w">⚠ ${s.warnings.length}</span>`:''}</td>
+ <td><button class="btn sm">${canEditScript(d)?'Edit':S.role==='oemc'&&s.status==='Submitted'?'Review':'View'}</button></td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No scripts here. Scripts appear once a drill is approved and within '+S.settings.scriptLead+' days.</td></tr>'}
+ </tbody></table></div>`}
+function chkHtml(r){return r.e.map(x=>`<div class="e">✕ ${esc(x)}</div>`).join('')+r.w.map(x=>`<div class="w">⚠ ${esc(x)}</div>`).join('')+(!r.e.length&&!r.w.length?'<div class="ok">✓ Script is complete and consistent</div>':'')}
+function refreshCheck(id){const el=document.getElementById('chk');if(el)el.innerHTML=chkHtml(checkScript(drill(id)))}
+function pScript(){const d=drill(UI.sid);if(!d||!d.script)return'<p>Script not found.</p>';const s=d.script,ed=canEditScript(d),r=checkScript(d),id=d.id;
+ const inp=(v,on,extra='')=>`<input value="${esc(v)}" oninput="${on}" ${extra} style="border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%">`;
+ const area_staff=STAFF.filter(x=>x.area===d.area||x.dept===d.dept);
+ return`<div class="row noprint" style="margin-bottom:10px"><button class="btn sm" onclick="A.go('scripts')">← Scripts</button><button class="btn sm" onclick="A.open('${id}')">Drill record</button><button class="btn sm" onclick="print()">Print</button></div>
+ <h1>${cdot(d.code)}Script · ${code(d.code).name} · ${area(d.area).name}</h1>
+ <p class="sub"><span class="mono">${id}</span> · drill on <b>${fmtd(eff(d))}</b>${d.shift?' · '+d.shift+' shift':''} · proponent ${esc(dept(d.dept).name)} · requested ${fmt(s.requestedAt)} · due <b class="${s.status!=='Approved'&&s.due<S.demoDate?'e':''}">${fmt(s.due)}</b> · ${chip(s.status)}</p>
+ ${s.rounds.length?`<div class="card"><h2>OEMC review rounds</h2>${s.rounds.map((x,i)=>`<div style="margin:4px 0">Round ${i+1} · ${fmt(x.at)} · ${chip(x.decision)} ${esc(x.comment)}</div>`).join('')}</div>`:''}
+ <div class="card"><h2>Automatic check</h2><div id="chk" class="msgs">${chkHtml(r)}</div>
+ <div class="row noprint" style="margin-top:10px">${ed?`<button class="btn" onclick="A.sTemplate('${id}')">Start from the ${code(d.code).name} template</button><button class="btn primary" onclick="A.sSubmit('${id}')">Submit to OEMC</button>`:''}
+ ${S.role==='oemc'&&s.status==='Submitted'?`<button class="btn ok" onclick="A.sDecide('${id}',true,'')">Approve script</button><button class="btn danger" onclick="A.modal('sreturn','${id}')">Return with comments</button>`:''}</div>
+ ${S.role==='oemc'&&s.status==='Submitted'&&s.warnings.length?`<p class="muted" style="font-size:13px">The proponent submitted with ${s.warnings.length} warning(s) from the check above.</p>`:''}</div>
+ <div class="card"><h2>Scenario</h2>
+ <div class="field"><label>Story</label>${ed?`<textarea oninput="A.sSet('${id}','story',this.value)" style="min-height:90px">${esc(s.story)}</textarea>`:`<div>${esc(s.story)||'<span class="muted">—</span>'}</div>`}</div>
+ <div class="grid2"><div class="field"><label>Location</label>${ed?inp(s.location,`A.sSet('${id}','location',this.value)`):`<div>${esc(s.location)||'—'}</div>`}</div>
+ <div class="field"><label>Linked hazard (HVA rank)${S.settings.hvaRequired?' *':' · optional'}</label>${ed?`<select onchange="A.sSet('${id}','hva',this.value)"><option value="">None</option>${HVA.map((h,i)=>`<option value="${h}" ${s.hva===h?'selected':''}>${i+1}. ${h}</option>`).join('')}</select>`:`<div>${s.hva?`${HVA.indexOf(s.hva)+1}. ${s.hva}`:'—'}</div>`}</div></div>
+ <div class="field"><label>Objectives</label>${s.objectives.map((o,i)=>ed?`<div class="row" style="flex-wrap:nowrap">${inp(o,`A.sObj('${id}',${i},this.value)`,`placeholder="Objective ${i+1}"`)}<button class="btn sm danger" onclick="A.sDel('${id}','objectives',${i})">✕</button></div>`:`<div>${i+1}. ${esc(o)}</div>`).join('')}
+ ${ed?`<div><button class="btn sm" onclick="A.sAdd('${id}','obj')">+ Objective</button></div>`:''}</div>
+ <div class="field"><label>Scenario map</label>${s.map?`<img src="${s.map}" alt="Scenario map" style="max-width:100%;max-height:320px;border:1px solid var(--line);border-radius:6px">`:'<span class="muted">No map</span>'}
+ ${ed?`<input type="file" accept="image/*" onchange="A.sMap('${id}',this)">${s.map?`<button class="btn sm danger" onclick="A.sSet('${id}','map',null);render()">Remove map</button>`:''}`:''}</div></div>
+ <div class="card"><h2>Roles</h2><div class="tbl"><table><thead><tr><th>Role</th><th>Person</th><th>Department</th>${ed?'<th></th>':''}</tr></thead><tbody>
+ ${s.roles.map((x,i)=>{const p=staff(x.badge);return`<tr><td>${ed?`<select onchange="A.sRole('${id}',${i},'role',this.value)">${ROLES.map(o=>`<option ${o===x.role?'selected':''}>${o}</option>`).join('')}</select>`:x.role}</td>
+ <td>${ed?`<select onchange="A.sRole('${id}',${i},'badge',this.value)"><option value="">Not assigned</option>${area_staff.map(o=>`<option value="${o.badge}" ${o.badge===x.badge?'selected':''}>${o.name} · ${o.job} · ${o.badge}</option>`).join('')}</select>`:p?`${p.name} <span class="muted">${p.badge}</span>`:'<span class="muted">Not assigned</span>'}</td>
+ <td>${p?esc(dept(p.dept).name):''}</td>${ed?`<td><button class="btn sm danger" onclick="A.sDel('${id}','roles',${i})">✕</button></td>`:''}</tr>`}).join('')}</tbody></table></div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.sAdd('${id}','role')">+ Role</button>`:''}</div>
+ <div class="card"><h2>Event list (minute by minute)</h2><div class="tbl"><table><thead><tr><th>Minute</th><th class="wrap">What happens</th><th class="wrap">Expected action</th><th>Role</th>${ed?'<th></th>':''}</tr></thead><tbody>
+ ${s.events.map((x,i)=>ed?`<tr><td><input type="number" min="0" value="${x.t}" oninput="A.sEv('${id}',${i},'t',this.value)" style="width:70px;border:1px solid var(--line);border-radius:6px;padding:5px"></td>
+ <td class="wrap" style="min-width:220px">${inp(x.event,`A.sEv('${id}',${i},'event',this.value)`)}</td><td class="wrap" style="min-width:200px">${inp(x.expected,`A.sEv('${id}',${i},'expected',this.value)`)}</td>
+ <td><select onchange="A.sEv('${id}',${i},'role',this.value)"><option value="">Pick role</option>${ROLES.map(o=>`<option ${o===x.role?'selected':''}>${o}</option>`).join('')}</select></td><td><button class="btn sm danger" onclick="A.sDel('${id}','events',${i})">✕</button></td></tr>`
+ :`<tr><td class="mono">+${x.t} min</td><td class="wrap">${esc(x.event)}</td><td class="wrap">${esc(x.expected)}</td><td>${esc(x.role)}</td></tr>`).join('')||`<tr><td colspan="5" class="muted">No events yet.</td></tr>`}</tbody></table></div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.sAdd('${id}','event')">+ Event</button>`:''}</div>`}
+
+/* ---------- Step 2 pages: drill day (UC5) ---------- */
+function pDay(){const due=S.drills.filter(isDue).sort((a,b)=>a.current<b.current?-1:1),
+ up=S.drills.filter(d=>d.status==='Scheduled'&&d.current>S.demoDate&&d.current<=addDays(S.demoDate,14)).sort((a,b)=>a.current<b.current?-1:1),
+ recent=S.drills.filter(d=>d.run&&d.run.result).sort((a,b)=>a.run.date<b.run.date?1:-1).slice(0,15);
+ const row=(d,btn)=>`<tr><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${area(d.area).name}</td><td>${fmtd(d.current)}</td><td>${d.script?chip(d.script.status):'<span class="muted">No script yet</span>'}</td><td>${btn}</td></tr>`;
+ const head='<thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Date</th><th>Script</th><th></th></tr></thead>';
+ return`<h1>Drill day</h1><p class="sub">The observer records the drill on a tablet: checklist, participants by badge, findings and the result. ${S.settings.requireScript?'A drill can be recorded only when its script is approved (setting).':''} ${S.role!=='observer'&&S.role!=='admin'?'<b>Switch to the Observer role to record a drill.</b>':''}</p>
+ <div class="card"><h2>Due now (${due.length})</h2>${due.length?`<div class="tbl"><table>${head}<tbody>${due.map(d=>row(d,canRun(d)?`<button class="btn sm primary" onclick="A.openRun('${d.id}')">${d.run&&!d.run.result?'Continue':'Start'}</button>`:scriptOk(d)?'':'<span class="e">Script not approved</span>')).join('')}</tbody></table></div>`:'<p class="muted">Nothing due on the demo date. Move the demo date to a drill date to try it.</p>'}</div>
+ <div class="card"><h2>Next 14 days (${up.length})</h2>${up.length?`<div class="tbl"><table>${head}<tbody>${up.map(d=>row(d,`<button class="btn sm" onclick="A.setDate0('${d.current}');A.openRun('${d.id}')">Jump to this day</button>`)).join('')}</tbody></table></div>`:'<p class="muted">None.</p>'}</div>
+ <div class="card"><h2>Recently recorded</h2>${recent.length?`<div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Date</th><th>Result</th><th>Participants</th><th>Findings</th><th></th></tr></thead><tbody>
+ ${recent.map(d=>`<tr><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${area(d.area).name}</td><td>${fmtd(d.run.date)}</td><td>${chip(d.run.result==='Completed'?'Completed':'Redo required')}</td><td>${d.run.participants.length}</td><td>${d.run.findings.length}${d.run.findings.some(f=>f.gap)?` <span class="w">${d.run.findings.filter(f=>f.gap).length} gap</span>`:''}</td><td><button class="btn sm" onclick="UI.rid='${d.id}';A.go('run')">View</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No drill recorded yet.</p>'}</div>`}
+STC['Met']='c-ok';STC['Partly']='c-warn';STC['Not met']='c-err';STC['N/A']='c-grey';STC.Requested='c-grey';STC['Not completed']='c-err';STC.Postponed='c-warn';
+function partSearch(id){const el=document.getElementById('ps');if(!el)return;const q=UI.pq.toLowerCase().trim(),d=drill(id);
+ if(!q){el.innerHTML='';return}const hits=STAFF.filter(s=>(s.badge+' '+s.name).toLowerCase().includes(q)&&!d.run.participants.includes(s.badge)).slice(0,8);
+ el.innerHTML=hits.map(s=>`<div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span><span class="mono">${s.badge}</span> ${s.name} <span class="muted">${s.job} · ${esc(dept(s.dept).name)}</span></span><button class="btn sm" onclick="A.rAdd('${id}','${s.badge}')">Add</button></div>`).join('')||'<div class="muted">No match</div>'}
+function pRun(){const d=drill(UI.rid);if(!d||!d.run)return'<p>No drill-day record.</p>';const r=d.run,ro=!!r.result||!canRecord(d),id=d.id,cl=checklist(d.code),items=cl.flatMap(s=>s.items),
+ answered=items.filter(i=>r.checks[i.k]&&r.checks[i.k].v).length,byDept={};r.participants.forEach(b=>{const p=staff(b);if(p)byDept[p.dept]=(byDept[p.dept]||0)+1});
+ const seg=k=>{const c=r.checks[k]||{};return ro?chip(c.v||'—'):`<div class="seg">${['Met','Partly','Not met','N/A'].map(v=>`<button class="${c.v===v?'on-'+v.replace(/[^a-z]/gi,''):''}" onclick="A.rCheck('${id}','${k}','${v}')">${v}</button>`).join('')}</div>`};
+ return`<div class="row noprint" style="margin-bottom:10px"><button class="btn sm" onclick="A.go('day')">← Drill day</button>${d.script?`<button class="btn sm" onclick="A.openScript('${id}')">View script</button>`:''}<button class="btn sm" onclick="A.open('${id}')">Drill record</button></div>
+ <h1>${cdot(d.code)}${code(d.code).name} · ${area(d.area).name}</h1>
+ <p class="sub"><span class="mono">${id}</span> · ${fmtd(r.date||d.current)}${d.script&&d.script.location?' · '+esc(d.script.location):''} · observer ${esc(r.observer)} ${r.result?chip(r.result):chip('In progress')}</p>
+ ${d.script&&d.script.story?`<div class="note"><b>Scenario.</b> ${esc(d.script.story)}</div>`:''}
+ <div class="card"><h2>Times</h2><div class="row"><label class="row" style="gap:6px">Start <input type="time" value="${r.start}" ${ro?'disabled':''} onchange="A.rSet('${id}','start',this.value)" class="big"></label>
+ <label class="row" style="gap:6px">End <input type="time" value="${r.end}" ${ro?'disabled':''} onchange="A.rSet('${id}','end',this.value)" class="big"></label></div></div>
+ <div class="card"><h2>Observer checklist <span class="muted" style="font-weight:500">${answered} of ${items.length} answered</span></h2>
+ ${cl.map(sec=>`<div class="sec">${sec.sec}</div>${sec.items.map(i=>`<div class="ci"><div class="ct">${esc(i.t)}</div>${seg(i.k)}
+ ${ro?(r.checks[i.k]&&r.checks[i.k].note?`<div class="muted" style="font-size:13px;flex-basis:100%">${esc(r.checks[i.k].note)}</div>`:''):`<input placeholder="Note" value="${esc((r.checks[i.k]||{}).note||'')}" oninput="A.rNote('${id}','${i.k}',this.value)" class="big" style="flex-basis:100%">`}</div>`).join('')}`).join('')}</div>
+ <div class="card"><h2>Participants (${r.participants.length})</h2>
+ ${ro?'':`<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:240px"><input id="pq" class="big" style="width:100%" placeholder="Scan or type badge number or name" value="${esc(UI.pq)}" oninput="UI.pq=this.value;partSearch('${id}')"><div id="ps"></div></div>
+ <select class="big" onchange="if(this.value)A.rAddDept('${id}',this.value)"><option value="">Add a whole department…</option>${DEPTS.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>`}
+ <div class="muted" style="font-size:13px;margin:10px 0 6px">${Object.entries(byDept).map(([k,n])=>`${esc(dept(k).name)}: ${n}`).join(' · ')||'Nobody added yet'}</div>
+ <div class="pills">${r.participants.map(b=>{const p=staff(b);return`<span class="pill">${p?p.name:b} <span class="mono muted">${b}</span>${ro?'':` <button onclick="A.rDel('${id}','${b}')" title="Remove">✕</button>`}</span>`}).join('')}</div></div>
+ <div class="card"><h2>Findings (${r.findings.length})</h2><p class="muted" style="font-size:13px;margin-top:0">Anything that went wrong or could be better. "Possible gap" marks it for the improvement plan (Step 3).</p>
+ ${r.findings.map((f,i)=>`<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><div>${esc(f.text)} <span class="chip c-info">${esc(f.type)}</span>${f.gap?' <span class="chip c-warn">Possible gap</span>':''}</div>${ro?'':`<button class="btn sm danger" onclick="A.rFDel('${id}',${i})">✕</button>`}</div>`).join('')}
+ ${ro?'':`<div class="row" style="margin-top:10px;align-items:flex-end"><div class="field" style="flex:1;min-width:220px;margin:0"><label>Finding</label><input id="f-t" class="big" placeholder="e.g. Radio not transmitting from nurse station"></div>
+ <div class="field" style="margin:0"><label>Type</label><select id="f-ty" class="big">${GAP_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+ <label class="row" style="gap:6px;padding-bottom:8px"><input type="checkbox" id="f-g" checked> Possible gap</label><button class="btn" onclick="A.rFinding('${id}')">Add finding</button></div>`}</div>
+ ${ro?(r.result==='Not completed'&&d.notDoneReason?`<div class="card"><b>Not completed:</b> ${esc(d.notDoneReason)}</div>`:''):`<div class="card"><h2>Result</h2><div class="field"><label>If not completed, why?</label><textarea id="r-why" placeholder="Only needed for Not completed"></textarea></div>
+ <div class="row"><button class="btn ok big" onclick="A.rFinish('${id}','Completed')">Completed</button><button class="btn danger big" onclick="A.rFinish('${id}','Not completed')">Not completed</button><button class="btn big" onclick="A.rFinish('${id}','Postponed')">Postponed…</button></div>
+ <p class="muted" style="font-size:13px">Postponed opens a change request to OEMC. Not completed asks the proponent for a redo in the same month.</p></div>`}
+ ${d.prevRun?`<div class="card muted">An earlier attempt on ${fmt(d.prevRun.date)} was not completed.</div>`:''}`}
+
 function pMOH(){const ok=['Approved','Sent to MOH & MSMD'].includes(S.planStatus);const rows=S.drills.slice().sort((a,b)=>a.area.localeCompare(b.area)||(eff(a)<eff(b)?-1:1));
  return`<h1>MOH and Aramco MSMD copy</h1><p class="sub">The approved schedule in a simple table. The real submission format is still to be confirmed with EPPU (open point). ${S.sentAt?`Sent on ${fmt(S.sentAt)}.`:''}</p>
  ${ok?`<div class="row noprint" style="margin-bottom:12px">${S.role==='admin'&&S.planStatus==='Approved'?'<button class="btn primary" onclick="A.sendMOH()">Send copy to MOH and MSMD</button>':''}<button class="btn" onclick="csv()">Download CSV</button><button class="btn" onclick="print()">Print / save as PDF</button></div>
@@ -458,8 +718,13 @@ function csv(){const h=['No','Area','Facility','Code','Meaning','Required period
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+t],{type:'text/csv'}));a.download=`drill-schedule-${YEAR}.csv`;a.click()}
 
 function pMaster(){const locked=S.planStatus!=='Not started',t=UI.ml;
- const tabs=[['freq','Frequency rules'],['codes','Colour codes'],['reasons','Change reasons'],['settings','Settings (open points)']];
+ const tabs=[['freq','Frequency rules'],['codes','Colour codes'],['reasons','Change reasons'],['roles','Drill roles'],['hva','Hazards (HVA)'],['check','Observer checklist'],['gaps','Finding types'],['settings','Settings (open points)']];
  let body='';
+ if(t==='roles')body=`<p class="sub">Roles a script can assign (UC4). Every script needs a drill controller and an evaluator / observer.</p><ul class="list">${ROLES.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+ if(t==='hva')body=`<p class="sub">Sample hazard vulnerability analysis, ranked. A script can link to one (optional unless the setting says otherwise).</p><ol class="list">${HVA.map(h=>`<li>${h}</li>`).join('')}</ol>`;
+ if(t==='check')body=`<p class="sub">The observer checklist is the same for every code except the Response section. Based on generic HSEEP evaluation guides.</p>${CHK_GENERIC.map(([s,i])=>`<div class="sec">${s}</div><ul class="list">${i.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}
+  <div class="sec">Response, by code</div><div class="tbl"><table><tbody>${CODES.map(c=>`<tr><td>${cdot(c.id)}${c.name}</td><td class="wrap">${CHK_CODE[c.id].join(' · ')}</td></tr>`).join('')}</tbody></table></div>`;
+ if(t==='gaps')body=`<p class="sub">Types a finding can have. Step 3 turns findings marked "possible gap" into gaps with an owner and a due date.</p><ul class="list">${GAP_TYPES.map(g=>`<li>${g}</li>`).join('')}</ul>`;
  if(t==='freq')body=`<p class="sub">How often each code must be drilled in each area. The plan is generated from this table. ${locked?'<b>Locked</b> because the plan is generated; Reset to change it.':S.role==='admin'?'You can change any cell before generating.':'Only the EPPU admin can change it.'}</p>
  <div class="tbl"><table><thead><tr><th>Code</th>${AREAS.map(a=>`<th>${a.id}</th>`).join('')}<th>Per year</th></tr></thead><tbody>
  ${CODES.map(c=>`<tr><td>${cdot(c.id)}${c.name}</td>${AREAS.map(a=>`<td>${!locked&&S.role==='admin'?`<select onchange="A.setFreq('${c.id}','${a.id}',this.value)">${Object.entries(FREQ).map(([k,v])=>`<option value="${k}" ${S.freq[c.id][a.id]===k?'selected':''}>${v}</option>`).join('')}</select>`:FREQ[S.freq[c.id][a.id]]}</td>`).join('')}
@@ -472,6 +737,10 @@ function pMaster(){const locked=S.planStatus!=='Not started',t=UI.ml;
  <div class="field"><label><input type="checkbox" ${dis} ${S.settings.earlierOff?'checked':''} onchange="A.setSetting('earlierOff',this.checked)"> Moving a drill earlier counts as off-schedule</label></div>
  <div class="field"><label>Max drills per area in one week (warning)</label><input type="number" min="1" max="10" ${dis} value="${S.settings.maxPerWeek}" onchange="A.setSetting('maxPerWeek',+this.value)" style="width:90px"></div>
  <div class="field"><label>Minimum days between two drills of the same code in an area (warning)</label><input type="number" min="0" max="60" ${dis} value="${S.settings.minGap}" onchange="A.setSetting('minGap',+this.value)" style="width:90px"></div>
+ <div class="field"><label>Request the script this many days before the drill</label><input type="number" min="7" max="90" ${dis} value="${S.settings.scriptLead}" onchange="A.setSetting('scriptLead',+this.value)" style="width:90px"></div>
+ <div class="field"><label>Script due this many days before the drill</label><input type="number" min="1" max="60" ${dis} value="${S.settings.scriptDue}" onchange="A.setSetting('scriptDue',+this.value)" style="width:90px"></div>
+ <div class="field"><label><input type="checkbox" ${dis} ${S.settings.requireScript?'checked':''} onchange="A.setSetting('requireScript',this.checked)"> A drill can run only with an approved script</label></div>
+ <div class="field"><label><input type="checkbox" ${dis} ${S.settings.hvaRequired?'checked':''} onchange="A.setSetting('hvaRequired',this.checked)"> Each script must link to a ranked hazard (HVA)</label></div>
  <div class="field"><label>Deadline for proponents to pick dates</label><input type="date" ${dis} value="${S.settings.pickDeadline}" onchange="A.setSetting('pickDeadline',this.value)" style="width:170px"></div>`}
  return`<h1>Master lists</h1><p class="sub">UC19. Lists the app owns. In production they are maintained in the app and published to Datasphere so the dashboards use the same codes.</p>
  <div class="tabs">${tabs.map(([k,l])=>`<button class="${t===k?'on':''}" onclick="UI.ml='${k}';render()">${l}</button>`).join('')}</div><div class="card">${body}</div>`}
@@ -491,7 +760,22 @@ function pData(){const t=UI.ds,q=UI.dsq.toLowerCase();let body='';
 function pEmails(){return`<h1>Email log</h1><p class="sub">The messages the app would send. In the demo nothing leaves the browser. On BTP these come from SAP Build Process Automation.</p>
  ${S.emails.length?S.emails.slice(0,150).map(m=>`<div class="email"><div class="meta">${fmt(m.at)} · to ${esc(m.to)}</div><b>${esc(m.subject)}</b><div class="muted">${esc(m.body)}</div></div>`).join('')+(S.emails.length>150?`<p class="muted">${S.emails.length-150} older messages not shown.</p>`:''):'<div class="card muted">No messages yet.</div>'}`}
 
-function pAbout(){return`<h1>About this demo</h1><p class="sub">Step 1 of 3 of the drill lifecycle app: the annual schedule (UC2), change control (UC3) and master lists (UC19). Steps 2 and 3 add the script and drill day (UC4, UC5) and the report and gaps (UC6, UC7).</p>
+function pAbout(){return`<h1>About this demo</h1><p class="sub">Steps 1 and 2 of 3 of the drill lifecycle app: the annual schedule (UC2), change control (UC3), master lists (UC19), the drill script (UC4) and drill day (UC5). Step 3 adds the After Action Report and gaps (UC6, UC7).</p>
+ <div class="card"><h2>Step 2 walkthrough</h2><ol class="list">
+ <li>Press <b>Load mid-year</b> on Overview (demo date 15 Jul 2026).</li>
+ <li>As <b>Proponent</b>, open Drill scripts, pick a requested script, start from the template and edit it. Change an age or a ward in one event and watch the check flag it. Submit.</li>
+ <li>As <b>OEMC</b>, open the Code Pink script in review: the check shows the story and the event list disagree on the child. Return it with comments, or approve another script.</li>
+ <li>As <b>Observer</b>, open Drill day, jump to an upcoming drill, fill the checklist on a tablet, add participants by badge, log a finding as a possible gap and record the result.</li>
+ <li>Open the drill <b>IT-DH-Y</b> (oxygen supply failure, April): its record has the "radio not transmitting" finding flagged for Step 3.</li></ol></div>
+ <div class="card"><h2>Business rules in step 2</h2><ol class="list">
+ <li>BR-11 When a drill is approved and ${S.settings.scriptLead} days away, the app requests the script from the proponent. It is due ${S.settings.scriptDue} days before the drill (settings).</li>
+ <li>BR-12 A script needs a story, at least one objective, an event list with a role on each event, and a person as drill controller and as evaluator / observer. Hard stop.</li>
+ <li>BR-13 The story is checked against each event: ages, male / female and ward or building names must match. Mismatches are warnings that OEMC sees.</li>
+ <li>BR-14 OEMC approves or returns a script with comments; each decision is a review round. KPIs: approved on time and average rounds.</li>
+ <li>BR-15 Drill day can be recorded only on or after the drill date and, by setting, only with an approved script.</li>
+ <li>BR-16 Completed needs every checklist item answered, an end time and at least one participant. Not completed needs a reason and starts the redo rule (BR-09). Postponed opens a change request (BR-07).</li>
+ <li>BR-17 Participants are recorded by badge from the Datasphere staff list. KPI: share of staff in at least one drill.</li>
+ <li>BR-18 Findings carry one of 8 types; those marked "possible gap" go to the improvement plan in Step 3.</li></ol></div>
  <div class="card"><h2>How to walk through it</h2><ol class="list">
  <li>As <b>EPPU admin</b>, open Master lists and check the frequency rules, then generate the ${YEAR} slots from Overview.</li>
  <li>Switch to <b>Proponent</b>, pick a department and set dates in My drills. Try a Friday, Eid or a date outside the period to see the checks.</li>
@@ -530,8 +814,12 @@ function drawer(){const d=drill(UI.drawer);if(!d)return'';const w=warns(d),c=cod
  ${w.length?`<div class="msgs">${w.map(x=>`<div class="w">⚠ ${esc(x)}</div>`).join('')}</div>`:''}
  <div class="row" style="margin:14px 0">${canEditDate(d)?`<label class="row" style="gap:8px">Date <input type="date" min="${d.start}" max="${d.end}" value="${d.planned||''}" onchange="A.setDate('${d.id}',this.value)" style="border:1px solid var(--line);border-radius:6px;padding:5px 8px"></label>`:''}
  ${canChange(d)?`<button class="btn primary" onclick="A.modal('${d.status==='Redo required'?'redo':'change'}','${d.id}')">${d.status==='Redo required'?'Request redo':'Request change'}</button>`:''}
- ${canRecord(d)?`<button class="btn" onclick="A.modal('outcome','${d.id}')">Record outcome</button>`:''}</div>
- ${canRecord(d)?'<p class="muted" style="font-size:13px">Recording the outcome is a stand-in. Step 2 replaces it with the observer checklist on drill day.</p>':''}
+ ${d.script?`<button class="btn" onclick="A.openScript('${d.id}')">${canEditScript(d)?'Edit script':'View script'}</button>`:''}
+ ${canRun(d)?`<button class="btn primary" onclick="A.openRun('${d.id}')">Drill day</button>`:''}
+ ${d.run&&d.run.result?`<button class="btn" onclick="UI.rid='${d.id}';A.go('run')">Drill-day record</button>`:''}</div>
+ ${canRecord(d)&&!scriptOk(d)?'<p class="e" style="font-size:13px">The drill date has come but the script is not approved, so drill day cannot be recorded (setting).</p>':''}
+ ${d.script?`<dl class="kv"><dt>Script</dt><dd>${chip(d.script.status)} due ${fmt(d.script.due)}${d.script.rounds.length?` · ${d.script.rounds.length} review round(s)`:''}</dd>
+ ${d.run&&d.run.result?`<dt>Drill day</dt><dd>${d.run.participants.length} participants · ${d.run.findings.length} finding(s)${d.run.findings.some(f=>f.gap)?` · <span class="w">${d.run.findings.filter(f=>f.gap).length} possible gap(s)</span>`:''}</dd>`:''}</dl>`:''}
  <h2 style="margin-top:20px">History</h2><div class="hist">${d.history.slice().reverse().map(h=>`<div><div class="at">${fmt(h.at)} · ${esc(h.who)}</div>${esc(h.text)}</div>`).join('')}</div></div></div>`}
 function modal(){const m=UI.modal;if(!m)return'';let h='';
  if(m.type==='change'||m.type==='redo'){const d=drill(m.id),redo=m.type==='redo';const min=addDays(S.demoDate,1);
@@ -545,6 +833,8 @@ function modal(){const m=UI.modal;if(!m)return'';let h='';
   <div class="field"><label>Result</label><select id="m-res" onchange="document.getElementById('m-rw').style.display=this.value==='Completed'?'none':'grid'"><option>Completed</option><option>Not completed</option></select></div>
   <div class="field" id="m-rw" style="display:none"><label>Why was it not completed?</label><textarea id="m-why"></textarea></div>
   <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn primary" onclick="A.record('${d.id}',val('m-res'),val('m-why'))">Save</button></div>`}
+ if(m.type==='sreturn')h=`<h2>Return script ${m.id} with comments</h2><div class="field"><label>What must the proponent change? (required)</label><textarea id="m-c">${esc(drill(m.id).script.warnings.join('\n'))}</textarea></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn danger" onclick="A.sDecide('${m.id}',false,val('m-c'))">Return</button></div>`;
  if(m.type==='return'||m.type==='reject')h=`<h2>${m.type==='return'?'Return '+unitName(m.id)+' to EPPU':'Reject '+m.id}</h2><div class="field"><label>Comment (required)</label><textarea id="m-c"></textarea></div>
   <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn danger" onclick="${m.type==='return'?`A.returnUnit('${m.id}',val('m-c'))`:`A.decide('${m.id}',false,val('m-c'))`}">${m.type==='return'?'Return':'Reject'}</button></div>`;
  return`<div class="modalwrap" onclick="if(event.target===this){UI.modal=null;render()}"><div class="modal">${h}</div></div>`}
@@ -553,16 +843,16 @@ function liveCheck(id,mode){const v=val('m-to'),el=document.getElementById('m-ch
  el.innerHTML=r.e.map(x=>`<div class="e">✕ ${esc(x)}</div>`).join('')+r.w.map(x=>`<div class="w">⚠ ${esc(x)}</div>`).join('')+(!r.e.length&&!r.w.length?'<div class="ok">✓ No conflicts found</div>':'')}
 
 /* ---------- Shell ---------- */
-const PAGES=[['Work',[['overview','Overview'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy']]],
+const PAGES=[['Work',[['overview','Overview'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy'],['scripts','Drill scripts'],['day','Drill day']]],
  ['Data',[['master','Master lists'],['data','Datasphere (sample)'],['emails','Email log']]],['Help',[['about','About this demo']]]];
 function render(){const n=counts();const props=[...new Set(S.drills.length?S.drills.map(d=>d.dept):CODES.flatMap(c=>AREAS.map(a=>proponentFor(c.id,a.id))))];
- const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,master:pMaster,data:pData,emails:pEmails,about:pAbout}[UI.page]();
+ const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,master:pMaster,data:pData,emails:pEmails,about:pAbout}[UI.page]();
  document.getElementById('app').innerHTML=`<header class="shell"><div class="brand"><span class="mark">DR</span>EPPU Drill Manager</div><span class="demo-tag">Demo · sample data</span><span class="sp"></span>
- <label>View as <select onchange="A.setRole(this.value)"><option value="admin" ${S.role==='admin'?'selected':''}>EPPU admin</option><option value="proponent" ${S.role==='proponent'?'selected':''}>Proponent</option><option value="oemc" ${S.role==='oemc'?'selected':''}>OEMC reviewer</option></select></label>
+ <label>View as <select onchange="A.setRole(this.value)"><option value="admin" ${S.role==='admin'?'selected':''}>EPPU admin</option><option value="proponent" ${S.role==='proponent'?'selected':''}>Proponent</option><option value="oemc" ${S.role==='oemc'?'selected':''}>OEMC reviewer</option><option value="observer" ${S.role==='observer'?'selected':''}>Observer</option></select></label>
  ${S.role==='proponent'?`<label>Dept <select onchange="A.setDept(this.value)">${DEPTS.filter(d=>props.includes(d.id)).map(d=>`<option value="${d.id}" ${S.dept===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select></label>`:''}
  <label>Demo date <input type="date" value="${S.demoDate}" onchange="A.setDate0(this.value)"></label>
  <button class="btn sm" onclick="A.reset(S.demoDate>'2026-01-01'?'mid':'fresh')" title="Restore the sample data in this browser">Reset</button></header>
- <div class="layout"><nav>${PAGES.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([k,l])=>`<button class="${UI.page===k?'on':''}" onclick="A.go('${k}')"><span>${l}</span>${k==='approvals'&&n.appr?`<span class="badge">${n.appr}</span>`:''}</button>`).join('')).join('')}</nav>
+ <div class="layout"><nav>${PAGES.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([k,l])=>`<button class="${UI.page===k?'on':''}" onclick="A.go('${k}')"><span>${l}</span>${(b=>b?`<span class="badge">${b}</span>`:'')({approvals:n.appr,scripts:n.scripts,day:n.day}[k])}</button>`).join('')).join('')}</nav>
  <main>${page}</main></div>${drawer()}${modal()}`;
  renderTable()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(UI.drawer||UI.modal))A.close()});
