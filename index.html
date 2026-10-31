@@ -106,6 +106,16 @@ td input[type=date]{padding:3px 6px}
 .pills{display:flex;flex-wrap:wrap;gap:6px}
 .pill{background:var(--infobg);color:var(--info);border-radius:14px;padding:4px 6px 4px 12px;font-size:13.5px;display:inline-flex;gap:6px;align-items:center}
 .pill button{all:unset;cursor:pointer;padding:0 6px;color:var(--muted)}
+.bar{display:grid;grid-template-columns:minmax(110px,190px) 1fr auto;gap:10px;align-items:center;margin:5px 0;font-size:13.5px}
+.bt{background:var(--bg);border-radius:3px;height:12px;overflow:hidden}.bt div{height:100%;border-radius:3px}.bn{font:500 12.5px var(--mono);white-space:nowrap}
+.sigs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sig{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;border-top:4px solid var(--line)}
+.sig .k{font:600 11.5px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+.sig.done{border-top-color:var(--ok)}.sig.next{border-top-color:var(--warn);background:#FFFBF2}
+.cols{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;height:180px;align-items:end}
+.col{display:flex;flex-direction:column;align-items:center;height:100%}.cb{flex:1;width:100%;display:flex;gap:2px;align-items:flex-end;justify-content:center}
+.c1,.c2{width:40%;border-radius:3px 3px 0 0;min-height:1px}.c1{background:var(--ice)}.c2{background:var(--blue)}.cl{font:12px var(--mono);color:var(--muted);margin-top:4px}
+@media (max-width:860px){.sigs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:860px){.layout{grid-template-columns:1fr}nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}nav .grp{display:none}nav button{white-space:nowrap}main{padding:18px 16px 60px}.grid2{grid-template-columns:1fr}.kv{grid-template-columns:120px 1fr}}
 @media print{.shell,nav,.noprint{display:none!important}.layout{display:block}main{padding:0}.card,.tbl{border:0}}
 </style>
@@ -187,6 +197,16 @@ const CHK_CODE={RED:['RACE followed','Correct extinguisher used (PASS)','Fire do
  ORANGE:['Triage area set up','Triage tags used','Extra staff called in'],YELLOW:['Bomb threat checklist completed by call taker','Search done with radios off near the item','Police notified'],
  GREY:['Security arrived within 5 minutes','De-escalation attempted','Others moved to safety'],SILVER:['Run-hide-fight message announced','Affected zone locked down','Police notified'],
  GREEN:['Evacuation route used','Headcount at assembly point','Patients moved with their records'],IT:['Downtime / backup procedure started','Backup supply or paper forms available','Facilities and IT notified']};
+/* ---------- Step 3 lists: After Action Report (UC6) and gaps (UC7) ---------- */
+const GAP_DAYS={'Staff / training':60,'Communication':30,'Equipment':45,'Facility':90,'Policy / procedure':60,'IT system':45,'Supplies':30,'Security':30};
+const AAR_STEPS=[['Prepared','Prepared','proponent'],['Reviewed','Reviewed by code reviewer','reviewer'],['Concurred','OEMC concurs','oemc'],['Approved','DOM approves','dom']];
+const RATINGS=['Met','Partly met','Not met'];
+const ESC=['—','30 days: owner reminded','60 days: + department head (CPH)','90 days: + executives'];
+const LEGACY_GAPS=[['Fire extinguisher in corridor past inspection date','Equipment'],['Overhead page not heard in the staff lounge','Communication'],['New staff unsure of evacuation route','Staff / training'],
+ ['Fire door held open by a wedge','Facility'],['Spill kit missing goggles','Supplies'],['Downtime forms out of date','Policy / procedure'],['CCTV camera at east exit not recording','Security'],
+ ['Code team pager list not updated after rota change','Communication'],['Crash cart checklist not signed for 3 days','Equipment'],['Assembly point sign faded','Facility'],
+ ['Backup oxygen cylinders stored without a chain','Facility'],['Switchboard script for bomb threats missing questions','Policy / procedure'],['Night shift not trained on Code Pink lockdown','Staff / training'],
+ ['Two-way radios with flat batteries','Equipment'],['EHR downtime printer had no paper','Supplies'],['Badge access left open on stairwell door','Security']];
 function checklist(c){const l=[...CHK_GENERIC.slice(0,1),['Response',CHK_CODE[c]],...CHK_GENERIC.slice(1)];let n=0;return l.map(([sec,items])=>({sec,items:items.map(t=>({k:'i'+(++n),t}))}))}
 /* Scenario templates (HSEEP-style story + event list), filled per drill */
 function tpl(d){const h=hash(d.id),L=LOCS[d.area],loc=L[h%L.length],age=3+h%7,kid=['girl','boy'][h%2],adult=['man','woman'][h%2],aage=38+h%30,sh=d.shift?d.shift.toLowerCase()+' shift':'day shift',
@@ -257,13 +277,13 @@ function periods(f){const o=[];
  return o}
 
 /* ---------- State ---------- */
-function fresh(){return{v:2,demoDate:'2025-12-01',planStatus:'Not started',freq:JSON.parse(JSON.stringify(DEFAULT_FREQ)),
- settings:{approvalMode:'area',earlierOff:true,maxPerWeek:3,minGap:14,pickDeadline:'2025-12-18',scriptLead:30,scriptDue:14,requireScript:true,hvaRequired:false},
+function fresh(){return{v:3,demoDate:'2025-12-01',planStatus:'Not started',freq:JSON.parse(JSON.stringify(DEFAULT_FREQ)),
+ settings:{approvalMode:'area',earlierOff:true,maxPerWeek:3,minGap:14,pickDeadline:'2025-12-18',scriptLead:30,scriptDue:14,requireScript:true,hvaRequired:false,aarDue:14,gapRule:'type',datixAuto:true},gaps:[],gseq:0,
  drills:[],units:{},changes:[],emails:[],seq:0,role:'admin',dept:'SFP',sentAt:null}}
-function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===2)return s}}catch(e){}return fresh()}
+function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===3)return s}}catch(e){}return fresh()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let S=load();
-const UI={page:'overview',f:{area:'',code:'',month:'',status:'',q:'',mine:true},drawer:null,modal:null,ds:'depts',dsq:'',ml:'freq',sid:null,rid:null,pq:''};
+const UI={page:'overview',f:{area:'',code:'',month:'',status:'',q:'',mine:true},drawer:null,modal:null,ds:'depts',dsq:'',ml:'freq',sid:null,rid:null,pq:'',aid:null,gap:null,rf:'all',gf:{status:'open',type:'',owner:'',q:'',esc:''}};
 let SILENT=false;
 
 const ADMIN='Huda Al-Ghamdi (EPPU coordinator)',OEMC='Dr. Faisal Al-Mutairi (OEMC chair)';
@@ -271,8 +291,10 @@ const dept=id=>DEPTS.find(d=>d.id===id)||{id,name:id,head:'',area:''};
 const code=id=>CODES.find(c=>c.id===id);
 const area=id=>AREAS.find(a=>a.id===id);
 const drill=id=>S.drills.find(d=>d.id===id);
-const OBSERVER='Nadia Al-Harthi (EPPU observer)';
-const me=()=>S.role==='admin'?ADMIN:S.role==='oemc'?OEMC:S.role==='observer'?OBSERVER:`${dept(S.dept).head} (${dept(S.dept).name})`;
+const OBSERVER='Nadia Al-Harthi (EPPU observer)',DOM='Dr. Salma Al-Jaber (DOM)';
+const reviewerName=d=>{const r=code(d.code).reviewer,x=DEPTS.find(k=>k.name===r);return`${x?x.head:'Dr. Maryam Al-Dossary'} (${r})`};
+const me=(d)=>S.role==='admin'?ADMIN:S.role==='oemc'?OEMC:S.role==='observer'?OBSERVER:S.role==='dom'?DOM:S.role==='reviewer'?(d?reviewerName(d):'Code reviewer'):`${dept(S.dept).head} (${dept(S.dept).name})`;
+const ROLE_NAMES={admin:'EPPU admin',proponent:'Proponent',oemc:'OEMC reviewer',observer:'Observer',reviewer:'Code reviewer (AAR)',dom:'DOM approver',owner:'Gap owner / CPH'};
 const eff=d=>d.current||d.planned;
 const unitOf=d=>S.settings.approvalMode==='area'?d.area:'ALL';
 const unitIds=()=>S.settings.approvalMode==='area'?AREAS.map(a=>a.id):['ALL'];
@@ -320,7 +342,49 @@ function fillTemplate(d){const t=tpl(d),s=d.script;Object.assign(s,{story:t.stor
 /* Request the script N days before the drill (setting); runs whenever state changes */
 function tick(){S.drills.forEach(d=>{if(d.original&&!d.script&&['Scheduled','Change pending'].includes(d.status)&&addDays(eff(d),-S.settings.scriptLead)<=S.demoDate){
  d.script=newScript(d);log(d,`Script template requested from the proponent, due ${fmt(d.script.due)}`);
- mail(`${dept(d.dept).head} <${d.dept}>`,`Write the drill script for ${d.id}`,`The drill is on ${fmt(eff(d))}. Please submit the scenario and event list by ${fmt(d.script.due)}.`)}})}
+ mail(`${dept(d.dept).head} <${d.dept}>`,`Write the drill script for ${d.id}`,`The drill is on ${fmt(eff(d))}. Please submit the scenario and event list by ${fmt(d.script.due)}.`)}});
+ tick3()}
+
+/* ---------- Business rules: After Action Report (UC6) and gaps (UC7) ---------- */
+function defaultOwner(type,d){const fac={DH:'FAC',AH:'AHF',RT:'RTF'}[d.area]||LOCAL[d.area];
+ return type==='Facility'?fac:type==='Equipment'?(d.area==='DH'?'BME':fac):type==='IT system'?'ITS':type==='Security'?(d.area==='DH'?'SEC':LOCAL[d.area]||'SEC'):d.dept}
+const gapDue=(type,from)=>addDays(from,S.settings.gapRule==='30'?30:GAP_DAYS[type]);
+const now=()=>{const t=new Date();return`${pad(t.getHours())}:${pad(t.getMinutes())}`};
+function newAAR(d){const r=d.run,s=d.script||{},items=checklist(d.code).flatMap(x=>x.items);
+ return{status:'Draft',created:r.date,due:addDays(r.date,S.settings.aarDue),reminders:[],date:r.date,participants:r.participants.length,
+  summary:`${code(d.code).name} drill in ${s.location||area(d.area).name}, ${area(d.area).name}, ${r.start} to ${r.end}. ${s.story||''}`,
+  objectives:(s.objectives||[]).filter(o=>o.trim()).map(o=>({text:o,rating:'',note:''})),
+  strengths:items.filter(i=>r.checks[i.k]&&r.checks[i.k].v==='Met').slice(0,3).map(i=>i.t),
+  improvements:r.findings.filter(f=>f.gap).map(f=>({text:f.text,type:f.type,owner:defaultOwner(f.type,d),due:''})),sigs:[],returns:[]}}
+function aarChecks(d){const a=d.aar,r=d.run,imp=a.improvements,has=t=>imp.some(x=>x.text.toLowerCase().includes(t.toLowerCase().slice(0,18)));
+ const notMet=checklist(d.code).flatMap(x=>x.items).filter(i=>r.checks[i.k]&&r.checks[i.k].v==='Not met');
+ return[[`Drill date matches the drill-day record (${fmt(r.date)})`,a.date===r.date],
+  [`Number of participants matches the drill-day record (${r.participants.length})`,+a.participants===r.participants.length],
+  ['Summary written',a.summary.trim().length>=40],
+  ['Every script objective is rated',a.objectives.length>0&&a.objectives.every(o=>o.rating)],
+  [`Every checklist item marked "Not met" is in the improvement plan${notMet.length?` (${notMet.length})`:''}`,notMet.every(i=>has(i.t))],
+  ['Every finding flagged as a possible gap is in the improvement plan',r.findings.filter(f=>f.gap).every(f=>has(f.text))],
+  ['Every improvement item has a description, type and owner',imp.every(x=>x.text.trim()&&x.type&&x.owner)],
+  ['At least one strength recorded',a.strengths.some(s=>s.trim())]]}
+const nextStep=a=>AAR_STEPS[a.sigs.length];
+const canEditAAR=d=>d.aar&&['Draft','Returned'].includes(d.aar.status)&&(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept));
+const canSignAAR=d=>{if(!d.aar||d.aar.status==='Approved')return false;const st=nextStep(d.aar);if(!st)return false;
+ return st[2]==='proponent'?canEditAAR(d):S.role===st[2]};
+function makeGaps(d,at){d.aar.improvements.forEach(x=>{const g={id:'G-'+String(++S.gseq).padStart(3,'0'),drill:d.id,code:d.code,area:d.area,text:x.text,type:x.type,owner:x.owner,
+  created:at,due:x.due||gapDue(x.type,at),status:'Open',closedAt:null,esc:0,maint:null,datix:null,notes:[{at,who:'System',text:`Created from the approved report of ${d.id}`}]};
+  if(g.type==='Facility'){g.maint={no:'PM-'+(10004500+S.gseq),status:'Sent to SAP PM'};g.notes.push({at,who:'System',text:`Maintenance request ${g.maint.no} created in SAP (mock)`});
+   mail(`${dept(g.owner).head} <${g.owner}>`,`Maintenance request ${g.maint.no}`,`Facility gap ${g.id} from ${d.id}: ${g.text}`)}
+  S.gaps.push(g);mail(`${dept(g.owner).head} <${g.owner}>`,`New gap ${g.id} assigned to you`,`${g.text}. Due ${fmt(g.due)}.`)})}
+/* Reminders, escalation and Datix referral run whenever state changes */
+function tick3(){S.drills.forEach(d=>{if(d.run&&d.run.result==='Completed'&&!d.aar){d.aar=newAAR(d);log(d,`After Action Report opened, due ${fmt(d.aar.due)}`);
+  mail(`${dept(d.dept).head} <${d.dept}>`,`Prepare the After Action Report for ${d.id}`,`Due ${fmt(d.aar.due)} (${S.settings.aarDue} days after the drill).`)}
+  const a=d.aar;if(a&&!a.sigs.length)[7,14].forEach(n=>{if(!a.reminders.includes(n)&&diffDays(a.created,S.demoDate)>=n){a.reminders.push(n);
+   mail(`${dept(d.dept).head} <${d.dept}>`,`Reminder (day ${n}): report for ${d.id}`,n>=S.settings.aarDue?'The report is due today or overdue.':`Due ${fmt(a.due)}.`)}})});
+ S.gaps.forEach(g=>{if(g.status==='Closed')return;const age=diffDays(g.created,S.demoDate),lv=age>=90?3:age>=60?2:age>=30?1:0;
+  if(lv>g.esc){g.esc=lv;g.notes.push({at:S.demoDate,who:'System',text:`Escalated: ${ESC[lv]}`});
+   mail([`${dept(g.owner).head} <${g.owner}>`,lv>=2?'department head (CPH)':'',lv>=3?'executive team':''].filter(Boolean).join(', '),`Gap ${g.id} open ${age} days`,g.text)}
+  if(S.settings.datixAuto&&!g.datix&&g.due<S.demoDate){g.datix='DX-'+S.demoDate.slice(0,4)+'-'+String(4100+ +g.id.slice(2));g.notes.push({at:S.demoDate,who:'System',text:`Overdue: sent to Datix as ${g.datix} (mock)`});
+   mail('Datix <datix>',`Overdue drill gap ${g.id}`,`${g.text}. Owner ${dept(g.owner).name}, due ${fmt(g.due)}.`)}})}
 const canEditScript=d=>d.script&&['Requested','Draft','Returned'].includes(d.script.status)&&(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept));
 function facts(t){t=(t||'').toLowerCase();const G={girl:'F',woman:'F',female:'F',boy:'M',man:'M',male:'M'};
  return{ages:[...t.matchAll(/(\d+)[- ]year[- ]old/g)].map(m=>m[1]),gen:[...t.matchAll(/\b(girl|boy|woman|man|female|male)\b/g)].map(m=>G[m[1]]),locs:[...t.matchAll(/\b(ward|pod|wing|building)\s+([a-z0-9]+)\b/g)].map(m=>m[1]+' '+m[2])}}
@@ -447,7 +511,44 @@ const A={
   r.result=result;r.date=d.current;r.observer=me();SILENT=true;A.record(id,result,why);SILENT=false;
   log(d,`Drill day record: ${r.participants.length} participants, ${r.findings.length} finding(s)${r.findings.filter(f=>f.gap).length?`, ${r.findings.filter(f=>f.gap).length} flagged as possible gap`:''}`);
   UI.page='day';done(`${d.id}: ${result.toLowerCase()}. The record is saved.`)},
- setRole(r){S.role=r;UI.f.mine=true;if(['script','run'].includes(UI.page))UI.page='overview';done()},setDept(k){S.dept=k;done()},
+ /* --- UC6 After Action Report --- */
+ openAAR(id){UI.aid=id;UI.page='aar';UI.drawer=null;render();window.scrollTo(0,0)},
+ aSet(id,k,v){const d=drill(id);if(!canEditAAR(d))return;d.aar[k]=v;save();refreshAAR(id)},
+ aObj(id,i,k,v){const d=drill(id);if(!canEditAAR(d))return;d.aar.objectives[i][k]=v;save();if(k==='rating')render();else refreshAAR(id)},
+ aList(id,list,i,k,v){const d=drill(id);if(!canEditAAR(d))return;if(k===null)d.aar[list][i]=v;else d.aar[list][i][k]=v;save();if(['type','owner'].includes(k))render();else refreshAAR(id)},
+ aAdd(id,list){const d=drill(id);if(!canEditAAR(d))return;d.aar[list].push(list==='strengths'?'':{text:'',type:'Staff / training',owner:d.dept,due:''});done()},
+ aDel(id,list,i){const d=drill(id);if(!canEditAAR(d))return;d.aar[list].splice(i,1);done()},
+ aMissing(id){const d=drill(id),a=d.aar,r=d.run;if(!canEditAAR(d))return;let n=0;const has=t=>a.improvements.some(x=>x.text.toLowerCase().includes(t.toLowerCase().slice(0,18)));
+  checklist(d.code).forEach(sec=>sec.items.forEach(i=>{if(r.checks[i.k]&&r.checks[i.k].v==='Not met'&&!has(i.t)){const ty=sec.sec==='Communication'?'Communication':sec.sec==='Safety'?'Facility':'Staff / training';
+   a.improvements.push({text:`${i.t}: not done${r.checks[i.k].note?' ('+r.checks[i.k].note+')':''}`,type:ty,owner:defaultOwner(ty,d),due:''});n++}}));
+  r.findings.filter(f=>f.gap&&!has(f.text)).forEach(f=>{a.improvements.push({text:f.text,type:f.type,owner:defaultOwner(f.type,d),due:''});n++});done(n?`${n} item(s) added from drill day`:'Nothing missing')},
+ aSign(id){const d=drill(id),a=d.aar;if(!canSignAAR(d))return fail('It is not your turn to sign this report');const st=nextStep(a);
+  if(st[2]==='proponent'){const bad=aarChecks(d).filter(c=>!c[1]);if(bad.length)return fail(`${bad.length} continuity check(s) fail: ${bad[0][0]}`)}
+  const who=st[2]==='reviewer'?reviewerName(d):me();a.sigs.push({step:st[0],by:who,at:`${S.demoDate} ${now()}`});a.status=st[0];
+  d.history.push({at:S.demoDate,who,text:`Report signed: ${st[1]}`});const nx=nextStep(a);
+  if(nx)mail(nx[2]==='reviewer'?reviewerName(d):nx[2]==='oemc'?OEMC:DOM,`Sign the After Action Report for ${d.id}`,`Step ${a.sigs.length+1} of 4: ${nx[1]}.`);
+  else{makeGaps(d,S.demoDate);d.history.push({at:S.demoDate,who:'System',text:`${d.aar.improvements.length} gap(s) created from the approved report`})}
+  UI.modal=null;done(nx?`Signed. Next: ${nx[1]}`:`Report approved. ${a.improvements.length} gap(s) created.`)},
+ aReturn(id,comment){const d=drill(id),a=d.aar;if(!canSignAAR(d)||nextStep(a)[2]==='proponent')return fail('You cannot return this report');if(!comment)return fail('Add a comment');
+  const who=S.role==='reviewer'?reviewerName(d):me();a.returns.push({at:S.demoDate,by:who,comment});a.sigs=[];a.status='Returned';
+  d.history.push({at:S.demoDate,who,text:`Report returned: ${comment}`});mail(`${dept(d.dept).head} <${d.dept}>`,`Report ${d.id} returned`,comment);UI.modal=null;done('Report returned to the proponent')},
+ /* --- UC7 gaps --- */
+ openGap(id){UI.gap=id;render()},
+ gStatus(id,st,note){const g=S.gaps.find(x=>x.id===id);const own=S.role==='admin'||(S.role==='owner'&&g.owner===S.dept);if(!own)return fail('Only the gap owner or EPPU can update this gap');
+  if(st==='Closed'&&!note)return fail('Describe what was done to close the gap');
+  g.status=st;if(st==='Closed'){g.closedAt=S.demoDate;if(g.maint&&g.maint.status!=='Completed')g.maint.status='Completed'}else g.closedAt=null;
+  g.notes.push({at:S.demoDate,who:me(),text:`${st==='Open'?'Reopened':st}${note?': '+note:''}`});
+  if(st==='Closed')mail('EPPU <eppu>',`Gap ${g.id} closed`,note);UI.modal=null;done(`${g.id}: ${st.toLowerCase()}`)},
+ gNote(id,note){const g=S.gaps.find(x=>x.id===id);if(!note)return fail('Write a note');g.notes.push({at:S.demoDate,who:me(),text:note});UI.modal=null;done('Note added')},
+ gMaint(id){const g=S.gaps.find(x=>x.id===id);if(!g.maint)return;g.maint.status=g.maint.status==='Sent to SAP PM'?'In process':'Completed';g.notes.push({at:S.demoDate,who:'SAP PM (mock)',text:`Maintenance request ${g.maint.no}: ${g.maint.status}`});done()},
+ download(kind){const dl=(name,text,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()};
+  const csvOf=rows=>rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  if(kind==='json')dl('drill-demo-data.json',JSON.stringify({exported:S.demoDate,model:MODEL,masterData:{areas:AREAS,codes:CODES,frequency:S.freq,departments:DEPTS,roles:ROLES,hva:HVA,gapTypes:GAP_TYPES,gapDays:GAP_DAYS,changeReasons:REASONS},settings:S.settings,drills:S.drills.map(d=>({...d,script:d.script?{...d.script,map:d.script.map?'(image)':null}:null})),changeRequests:S.changes,gaps:S.gaps},null,1),'application/json');
+  if(kind==='gaps')dl('gaps.csv','﻿'+csvOf([['Gap','Drill','Code','Area','Description','Type','Owner','Created','Due','Status','Closed','Escalation','Maintenance','Datix'],...S.gaps.map(g=>[g.id,g.drill,g.code,g.area,g.text,g.type,dept(g.owner).name,g.created,g.due,g.status,g.closedAt,g.esc,g.maint&&g.maint.no,g.datix])]),'text/csv');
+  if(kind==='drills')dl('drills.csv','﻿'+csvOf([['Drill','Code','Area','Proponent','Period','Original date','Current date','Status','Changes','Script','Script approved','Drill result','Participants','Findings','Report','Report approved'],...S.drills.map(d=>[d.id,d.code,d.area,dept(d.dept).name,d.label,d.original,d.current,d.status,d.changes,d.script&&d.script.status,d.script&&d.script.approvedAt,d.run&&d.run.result,d.run&&d.run.participants.length,d.run&&d.run.findings.length,d.aar&&d.aar.status,d.aar&&d.aar.sigs[3]&&d.aar.sigs[3].at])]),'text/csv')},
+ setRole(r){S.role=r;UI.f.mine=true;if(['script','run','aar'].includes(UI.page))UI.page='overview';
+  if(r==='owner'&&S.gaps.length&&!S.gaps.some(g=>g.owner===S.dept)){const c={};S.gaps.forEach(g=>{if(g.status!=='Closed')c[g.owner]=(c[g.owner]||0)+1});S.dept=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||S.dept}
+  if(r==='proponent'&&S.drills.length&&!S.drills.some(d=>d.dept===S.dept))S.dept='SFP';done()},setDept(k){S.dept=k;done()},
  setDate0(v){if(!v)return;S.demoDate=v;done(`Demo date set to ${fmt(v)}`)},
  reset(kind){if(!SILENT&&!confirm('Throw away your changes in this browser and load the sample data again?'))return;
   const role=S.role,dp=S.dept;S=kind==='mid'?buildMid():fresh();S.role=role;S.dept=dp;UI.drawer=null;UI.modal=null;UI.page='overview';
@@ -456,7 +557,7 @@ const A={
  setSetting(k,v){if(k==='approvalMode'&&S.planStatus!=='Not started'&&S.planStatus!=='Collecting dates')return fail('Approval mode is locked once submission starts');
   S.settings[k]=v;if(k==='approvalMode'){S.units={};if(S.planStatus!=='Not started')unitIds().forEach(u=>unit(u))}done('Setting saved')},
  go(p){UI.page=p;UI.drawer=null;render();window.scrollTo(0,0)},
- open(id){UI.drawer=id;render()},close(){UI.drawer=null;UI.modal=null;render()},
+ open(id){UI.drawer=id;UI.gap=null;render()},close(){UI.drawer=null;UI.modal=null;UI.gap=null;render()},
  modal(type,id){UI.modal={type,id};render()}
 };
 
@@ -486,10 +587,36 @@ function buildMid(){SILENT=true;S=fresh();const R=mulberry(7);
   const checks={},findings=[],failed=!d.doneDate||d.doneDate!==ran;
   checklist(d.code).forEach(sec=>sec.items.forEach(it=>{const x=R2();const v=x<.82?'Met':x<.94?'Partly':x<.985?'Not met':'N/A';checks[it.k]={v,note:''};
    if(v==='Not met'||(v==='Partly'&&R2()<.4)){const ty=sec.sec==='Communication'?'Communication':sec.sec==='Safety'?'Facility':sec.sec==='Response'?(R2()<.5?'Staff / training':'Equipment'):'Policy / procedure';
-    checks[it.k].note='See findings';findings.push({text:`${it.t}: ${v==='Not met'?'not done':'only partly done'}`,type:ty,gap:v==='Not met'})}}));
+    checks[it.k].note='See findings';findings.push({text:`${it.t}: ${v==='Not met'?'not done':'only partly done'}`,type:ty,gap:v==='Not met'||R2()<.5})}}));
   d.run={observer:OBSERVER,start:'09:00',end:'09:'+pad(20+Math.floor(R2()*30)),checks,participants:[...ps],findings,result:d.status==='Completed'?'Completed':'Not completed',date:d.doneDate||ran};
   if(failed&&d.notDoneDate)d.prevRun={...d.run,result:'Not completed',date:d.notDoneDate}});
  const gas=drill('IT-DH-Y');if(gas.run){gas.run.findings.unshift({text:'Radio not transmitting from the nurse station to the facilities control room; the nurse had to walk to the next unit to call',type:'Facility',gap:true});gas.run.checks.i7={v:'Not met',note:'Radio failed at the nurse station'}}
+ /* Step 3 history: reports with dated signatures, gaps with closures, escalations and Datix referrals */
+ const R3=mulberry(23),at=(dt)=>`${dt} ${pad(8+Math.floor(R3()*9))}:${pad(Math.floor(R3()*60))}`;
+ S.drills.filter(d=>d.run&&d.run.result==='Completed').sort((a,b)=>a.run.date<b.run.date?-1:1).forEach(d=>{S.demoDate=d.run.date;d.aar=newAAR(d);const a=d.aar;
+  a.objectives.forEach(o=>{const x=R3();o.rating=x<.75?'Met':x<.95?'Partly met':'Not met'});if(!a.strengths.length)a.strengths=['Staff knew their roles'];
+  const steps=[addDays(d.run.date,4+Math.floor(R3()*12)+(R3()<.08?8:0))];for(let i=1;i<4;i++)steps.push(addDays(steps[i-1],1+Math.floor(R3()*3)));
+  a.reminders=[7,14].filter(n=>addDays(a.created,n)<=steps[0]&&addDays(a.created,n)<=today);
+  const ret=R3()<.06&&steps[3]<=today;if(ret){a.returns.push({at:addDays(steps[0],1),by:reviewerName(d),comment:'Rate objective 2 and add the owner for each improvement.'});steps.forEach((s,i)=>steps[i]=addDays(s,4))}
+  steps.forEach((s,i)=>{if(s<=today){const st=AAR_STEPS[i];a.sigs.push({step:st[0],by:i===0?`${dept(d.dept).head} (${dept(d.dept).name})`:i===1?reviewerName(d):i===2?OEMC:DOM,at:at(s)});a.status=st[0];
+   d.history.push({at:s,who:a.sigs[i].by,text:`Report signed: ${st[1]}`})}});
+  if(a.status==='Approved'&&steps[3]<'2026-07-01'){S.demoDate=steps[3];makeGaps(d,steps[3])}});
+ /* Recent reports: show every signature state, and one returned */
+ S.drills.filter(d=>d.aar&&d.aar.status==='Approved'&&d.aar.sigs[3].at>='2026-07-01').sort((a,b)=>a.aar.sigs[3].at<b.aar.sigs[3].at?1:-1).forEach((d,i)=>{const a=d.aar;
+  if(i<4){const keep=[1,2,3,0][i];a.sigs=a.sigs.slice(0,keep);a.status=keep?AAR_STEPS[keep-1][0]:'Returned';d.history=d.history.filter(h=>!h.text.startsWith('Report signed')||a.sigs.some(s=>h.text.endsWith(AAR_STEPS[a.sigs.indexOf(s)][1])));
+   if(!keep){a.returns.push({at:addDays(today,-1),by:OEMC,comment:'Objective 2 is rated Met but the checklist shows the code team arrived late. Please check the rating.'});d.history.push({at:addDays(today,-1),who:OEMC,text:'Report returned'})}}
+  else{S.demoDate=a.sigs[3].at.slice(0,10);makeGaps(d,S.demoDate)}});
+ for(let i=0;i<45;i++){const[t,ty]=LEGACY_GAPS[i%LEGACY_GAPS.length],ar=AREAS[Math.floor(R3()*AREAS.length)].id,c=CODES[Math.floor(R3()*CODES.length)].id,cr=addDays('2025-06-01',Math.floor(R3()*200));
+  S.gaps.push({id:'G-'+String(++S.gseq).padStart(3,'0'),drill:`${c}-${ar}-2025`,code:c,area:ar,text:t,type:ty,owner:defaultOwner(ty,{area:ar,dept:proponentFor(c,ar)}),created:cr,due:addDays(cr,GAP_DAYS[ty]),
+   status:'Open',closedAt:null,esc:0,maint:ty==='Facility'?{no:'PM-'+(10003000+i),status:'Sent to SAP PM'}:null,datix:null,notes:[{at:cr,who:'System',text:'Carried over from the 2025 drill programme'}],legacy:true})}
+ S.gaps.forEach(g=>{const age=diffDays(g.created,today),x=R3(),p=g.legacy?.72:Math.min(.92,.12+age/150);
+  if(x<p){const span=Math.max(5,Math.min(age,diffDays(g.created,g.due)+(R3()<.3?40:0)));g.closedAt=addDays(g.created,3+Math.floor(R3()*span));if(g.closedAt>today)g.closedAt=today;g.status='Closed';if(g.maint)g.maint.status='Completed'}
+  else if(R3()<.55){g.status='In progress';g.notes.push({at:addDays(g.created,Math.min(age,6)),who:dept(g.owner).head,text:'In progress: action plan agreed'});if(g.maint)g.maint.status='In process'}
+  const end=g.closedAt||today;[30,60,90].forEach((n,i)=>{if(addDays(g.created,n)<=end){g.esc=i+1;g.notes.push({at:addDays(g.created,n),who:'System',text:`Escalated: ${ESC[i+1]}`})}});
+  if(g.due<end){g.datix='DX-'+g.due.slice(0,4)+'-'+String(4100+ +g.id.slice(2));g.notes.push({at:addDays(g.due,1),who:'System',text:`Overdue: sent to Datix as ${g.datix} (mock)`})}
+  if(g.closedAt)g.notes.push({at:g.closedAt,who:dept(g.owner).head,text:'Closed: action completed and checked by EPPU'});g.notes.sort((a,b)=>a.at<b.at?-1:1)});
+ const rg=S.gaps.find(g=>g.text.startsWith('Radio not transmitting'));if(rg){rg.status='In progress';rg.closedAt=null;rg.maint={no:rg.maint?rg.maint.no:'PM-10004999',status:'In process'};
+  rg.notes=rg.notes.filter(n=>!n.text.startsWith('Closed')&&!n.text.startsWith('In progress'));rg.notes.push({at:addDays(rg.created,5),who:dept(rg.owner).head,text:'In progress: radio vendor visit booked, repeater on level 4 suspected'})}
  S.demoDate=today;
  const fut=S.drills.filter(d=>d.status==='Scheduled'&&d.current>addDays(today,5)).sort((a,b)=>a.current<b.current?-1:1);
  [0,7,15,24].forEach((i,j)=>{const d=fut[i];if(!d)return;let to=null;for(let k=3;k<20;k++){const c=addDays(d.current,k);if(c<=d.end&&okDay(c)){to=c;break}}
@@ -513,7 +640,7 @@ const STC={Open:'c-grey','Date proposed':'c-info',Submitted:'c-pur',Scheduled:'c
  Draft:'c-grey',Returned:'c-err',Approved:'c-ok',Pending:'c-warn',Rejected:'c-err','Not started':'c-grey','Collecting dates':'c-info','In approval':'c-pur','Sent to MOH & MSMD':'c-ok'};
 const chip=s=>`<span class="chip ${STC[s]||'c-grey'}">${esc(s)}</span>`;
 const cdot=c=>`<span class="dot" style="background:${code(c).color}"></span>`;
-const pct=(a,b)=>b?Math.round(a*100/b)+'%':'—';
+const pct=(a,b)=>b?Math.floor(a*100/b)+'%':'—';
 function kpi(){const ds=S.drills,due=ds.filter(d=>eff(d)&&eff(d)<=S.demoDate&&d.original),comp=ds.filter(d=>d.status==='Completed');
  const held=comp.filter(d=>d.doneDate===d.original).length;
  const required=ds.length||CODES.reduce((n,c)=>n+AREAS.reduce((m,a)=>m+periods(S.freq[c.id][a.id]).length,0),0);
@@ -523,10 +650,17 @@ function kpi(){const ds=S.drills,due=ds.filter(d=>eff(d)&&eff(d)<=S.demoDate&&d.
   ...(()=>{const ap=ds.filter(d=>d.script&&d.script.status==='Approved'),onT=ap.filter(d=>d.script.approvedAt<=d.script.due).length,
    rounds=ap.reduce((n,d)=>n+d.script.rounds.length,0),seen=new Set();ds.forEach(d=>[d.run,d.prevRun].forEach(r=>r&&r.result&&r.participants.forEach(b=>seen.add(b))));
    return{sAppr:ap.length,sOnTime:onT,sRounds:ap.length?(rounds/ap.length).toFixed(1):'—',sOpen:ds.filter(d=>d.script&&d.script.status!=='Approved').length,
-    sLate:ds.filter(d=>d.script&&d.script.status!=='Approved'&&d.script.due<S.demoDate).length,staffIn:seen.size}})()}}
+    sLate:ds.filter(d=>d.script&&d.script.status!=='Approved'&&d.script.due<S.demoDate).length,staffIn:seen.size}})(),
+  ...(()=>{const ar=ds.filter(d=>d.aar),prep=ar.filter(d=>d.aar.sigs.length),onT=prep.filter(d=>d.aar.sigs[0].at.slice(0,10)<=d.aar.due).length,
+   lateOpen=ar.filter(d=>!d.aar.sigs.length&&d.aar.due<S.demoDate).length,fin=ar.filter(d=>d.aar.status==='Approved'),
+   days=fin.length?Math.round(fin.reduce((n,d)=>n+diffDays(d.run.date,d.aar.sigs[3].at.slice(0,10)),0)/fin.length):'—',
+   G=S.gaps,closed=G.filter(g=>g.status==='Closed').length,open=G.filter(g=>g.status!=='Closed'),over=open.filter(g=>g.due<S.demoDate);
+   return{aAll:ar.length,aOnTime:onT,aBase:prep.length+lateOpen,aLate:lateOpen,aFinal:fin.length,aDays:days,gAll:G.length,gClosed:closed,gOpen:open.length,gOver:over.length,gL3:open.filter(g=>g.esc>=3).length}})()}}
 function counts(){const sc=S.drills.filter(d=>d.script&&(S.role==='oemc'?d.script.status==='Submitted':S.role==='proponent'?d.dept===S.dept&&['Requested','Draft','Returned'].includes(d.script.status):false)).length;
  return{appr:S.role==='oemc'?unitIds().filter(u=>unit(u).status==='Submitted').length+S.changes.filter(c=>c.status==='Pending').length:0,scripts:sc,
-  day:S.role==='observer'?S.drills.filter(canRun).length:0}}
+  day:S.role==='observer'?S.drills.filter(canRun).length:0,
+  reports:S.drills.filter(d=>d.aar&&canSignAAR(d)&&(S.role!=='admin')).length,
+  gaps:S.role==='owner'?S.gaps.filter(g=>g.owner===S.dept&&g.status!=='Closed').length:0}}
 
 /* ---------- Pages ---------- */
 function pOverview(){const k=kpi(),todo=[];
@@ -549,6 +683,15 @@ function pOverview(){const k=kpi(),todo=[];
  if(S.role==='oemc'){unitIds().filter(u=>unit(u).status==='Submitted').forEach(u=>todo.push([`${unitName(u)} is waiting for your approval.`,`<button class="btn primary" onclick="A.go('approvals')">Review</button>`]));
   const p=S.changes.filter(c=>c.status==='Pending').length;if(p)todo.push([`${p} change request(s) waiting for a decision.`,`<button class="btn primary" onclick="A.go('approvals')">Review</button>`]);
   S.drills.filter(d=>d.script&&d.script.status==='Submitted').forEach(d=>todo.push([`Script for <b>${d.id}</b> (${fmt(eff(d))}) is waiting for review.${d.script.warnings.length?` <span class="w">⚠ ${d.script.warnings.length} warning(s)</span>`:''}`,`<button class="btn primary" onclick="A.openScript('${d.id}')">Review script</button>`]))}
+ /* Step 3 to-dos */
+ S.drills.filter(d=>d.aar&&canSignAAR(d)&&S.role!=='admin'&&(S.role!=='proponent'||d.dept===S.dept)).forEach(d=>{const st=nextStep(d.aar);
+  todo.push([`After Action Report <b>${d.id}</b> (drill ${fmt(d.run.date)}): ${st[2]==='proponent'?`${d.aar.status==='Returned'?'returned, fix and ':''}prepare and sign, due ${fmt(d.aar.due)}${d.aar.due<S.demoDate?' <span class="e">overdue</span>':''}`:`waiting for your signature (${st[1]})`}.`,
+   `<button class="btn primary" onclick="A.openAAR('${d.id}')">${st[2]==='proponent'?'Open report':'Review and sign'}</button>`])});
+ if(S.role==='owner'){const mg=S.gaps.filter(g=>g.owner===S.dept&&g.status!=='Closed'),ov=mg.filter(g=>g.due<S.demoDate);
+  if(mg.length)todo.push([`${mg.length} open gap(s) for ${esc(dept(S.dept).name)}${ov.length?`, <span class="e">${ov.length} overdue</span>`:''}.`,`<button class="btn primary" onclick="UI.gf={status:'open',type:'',owner:'${S.dept}',q:''};A.go('gaps')">Open my gaps</button>`]);
+  else todo.push(['No open gaps for this department. Pick another department in the header.',''])}
+ if(S.role==='admin'){if(k.aLate)todo.push([`${k.aLate} After Action Report(s) are past due and not signed.`,`<button class="btn" onclick="UI.rf='late';A.go('reports')">Open reports</button>`]);
+  if(k.gL3)todo.push([`${k.gL3} gap(s) open more than 90 days, escalated to executives.`,`<button class="btn" onclick="UI.gf={status:'open',type:'',owner:'',q:'',esc:'3'};A.go('gaps')">Open gaps</button>`])}
  const heat=AREAS.map(a=>{const row=MON.map((m,i)=>S.drills.filter(d=>d.area===a.id&&eff(d)&&+eff(d).slice(5,7)===i+1).length);return[a.id,row]});
  const mx=Math.max(1,...heat.flatMap(h=>h[1]));
  return`<h1>Drill plan ${YEAR}</h1><p class="sub">Status ${chip(S.planStatus)} · Viewing as <b>${esc(me())}</b> · Demo date ${fmtd(S.demoDate)}</p>
@@ -562,6 +705,8 @@ function pOverview(){const k=kpi(),todo=[];
   <div class="tile ${k.redo?'bad':''}"><div class="k">Redo outstanding</div><div class="v">${k.redo}</div><div class="h">not completed, redo in same month</div></div>
   <div class="tile ${k.sAppr?(k.sOnTime/k.sAppr>=.9?'good':'bad'):''}"><div class="k">Scripts approved on time</div><div class="v">${pct(k.sOnTime,k.sAppr)}</div><div class="h">${k.sAppr} approved · ${k.sRounds} review rounds on average</div></div>
   <div class="tile"><div class="k">Staff in at least 1 drill</div><div class="v">${pct(k.staffIn,STAFF.length)}</div><div class="h">${k.staffIn} of ${STAFF.length} staff</div></div>
+  <div class="tile ${k.aBase?(k.aOnTime/k.aBase>=.9?'good':'bad'):''}"><div class="k">Reports on time</div><div class="v">${pct(k.aOnTime,k.aBase)}</div><div class="h">signed within ${S.settings.aarDue} days · ${k.aDays} days to final approval</div></div>
+  <div class="tile ${k.gAll?(k.gClosed/k.gAll>=.8?'good':'bad'):''}"><div class="k">Gaps closed</div><div class="v">${pct(k.gClosed,k.gAll)}</div><div class="h">target above 80% · ${k.gOver} overdue</div></div>
  </div>
  <div class="card"><h2>Your to-do</h2><div class="todo">${todo.length?todo.map(([t,b])=>`<div class="it"><div>${t}</div><div class="row">${b}</div></div>`).join(''):'<div class="muted">Nothing waiting for you. Try another role in the header.</div>'}</div></div>
  <div class="grid2"><div class="card"><h2>Progress by ${S.settings.approvalMode==='area'?'area':'plan'}</h2><div class="tbl"><table><thead><tr><th>Area</th><th>Drills</th><th>Dated</th><th>Warnings</th><th>Approval</th></tr></thead><tbody>
@@ -706,6 +851,111 @@ function pRun(){const d=drill(UI.rid);if(!d||!d.run)return'<p>No drill-day recor
  <p class="muted" style="font-size:13px">Postponed opens a change request to OEMC. Not completed asks the proponent for a redo in the same month.</p></div>`}
  ${d.prevRun?`<div class="card muted">An earlier attempt on ${fmt(d.prevRun.date)} was not completed.</div>`:''}`}
 
+/* ---------- Step 3 pages: After Action Reports (UC6) ---------- */
+STC.Prepared='c-info';STC.Reviewed='c-pur';STC.Concurred='c-pur';STC['In progress']='c-warn';STC.Closed='c-ok';STC.Overdue='c-err';
+const bars=(rows,color='var(--blue)')=>{const mx=Math.max(1,...rows.map(r=>r[1]));return rows.map(([l,n,extra])=>`<div class="bar"><div class="bl">${l}</div><div class="bt"><div style="width:${(n/mx*100).toFixed(1)}%;background:${color}"></div></div><div class="bn">${n}${extra||''}</div></div>`).join('')};
+function pReports(){const rf=UI.rf||'all',k=kpi(),all=S.drills.filter(d=>d.aar&&(S.role!=='proponent'||!UI.f.mine||d.dept===S.dept));
+ const F={all:['All',()=>true],prep:['To prepare',d=>!d.aar.sigs.length],sign:['In signature',d=>d.aar.sigs.length&&d.aar.status!=='Approved'],ok:['Approved',d=>d.aar.status==='Approved'],
+  late:['Overdue',d=>!d.aar.sigs.length&&d.aar.due<S.demoDate],mine:['Waiting for me',d=>canSignAAR(d)]};
+ const rows=all.filter(F[rf][1]).sort((a,b)=>a.run.date<b.run.date?1:-1);
+ return`<h1>After Action Reports</h1><p class="sub">Opened automatically when a drill is recorded as completed, pre-filled from the script and the drill-day record. Due ${S.settings.aarDue} days after the drill, with reminders on day 7 and day 14. Eight continuity checks must pass before the first signature, then four signatures in order: prepared, reviewed by the code reviewer, OEMC concurs, DOM approves.</p>
+ <div class="kpis"><div class="tile ${k.aBase?(k.aOnTime/k.aBase>=.9?'good':'bad'):''}"><div class="k">Reports on time</div><div class="v">${pct(k.aOnTime,k.aBase)}</div><div class="h">${k.aOnTime} of ${k.aBase} signed by the due date</div></div>
+ <div class="tile"><div class="k">Days to final approval</div><div class="v">${k.aDays}</div><div class="h">drill date to DOM signature, average</div></div>
+ <div class="tile ${k.aLate?'bad':''}"><div class="k">Overdue</div><div class="v">${k.aLate}</div><div class="h">past due, not signed</div></div></div>
+ <div class="tabs">${Object.entries(F).map(([key,[l,fn]])=>`<button class="${rf===key?'on':''}" onclick="UI.rf='${key}';render()">${l} (${all.filter(fn).length})</button>`).join('')}</div>
+ ${S.role==='proponent'?`<label class="row" style="gap:6px;margin-bottom:10px"><input type="checkbox" ${UI.f.mine?'checked':''} onchange="UI.f.mine=this.checked;render()"> Only my department</label>`:''}
+ <div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Drill date</th><th>Due</th><th>Status</th><th>Signatures</th><th>Improvements</th><th></th></tr></thead><tbody>
+ ${rows.map(d=>{const a=d.aar,late=!a.sigs.length&&a.due<S.demoDate;return`<tr class="click" onclick="A.openAAR('${d.id}')"><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${d.area}</td><td>${fmt(d.run.date)}</td>
+ <td class="${late?'e':''}">${fmt(a.due)}</td><td>${chip(a.status)}</td><td class="mono">${'●'.repeat(a.sigs.length)}${'○'.repeat(4-a.sigs.length)}</td><td>${a.improvements.length}</td><td><button class="btn sm">${canSignAAR(d)?'Sign':'View'}</button></td></tr>`}).join('')||'<tr><td colspan="9" class="muted">No reports here.</td></tr>'}</tbody></table></div>`}
+function refreshAAR(id){const el=document.getElementById('achk');if(el)el.innerHTML=aarChkHtml(drill(id))}
+function aarChkHtml(d){return aarChecks(d).map(([t,ok],i)=>`<div class="${ok?'ok':'e'}">${ok?'✓':'✕'} ${i+1}. ${esc(t)}</div>`).join('')}
+function pAAR(){const d=drill(UI.aid);if(!d||!d.aar)return'<p>Report not found.</p>';const a=d.aar,ed=canEditAAR(d),id=d.id,r=d.run,st=nextStep(a);
+ const inp=(v,on,extra='')=>`<input value="${esc(v)}" oninput="${on}" ${extra} class="big" style="width:100%">`;
+ return`<div class="row noprint" style="margin-bottom:10px"><button class="btn sm" onclick="A.go('reports')">← Reports</button><button class="btn sm" onclick="A.open('${id}')">Drill record</button>${d.script?`<button class="btn sm" onclick="A.openScript('${id}')">Script</button>`:''}<button class="btn sm" onclick="UI.rid='${id}';A.go('run')">Drill-day record</button><button class="btn sm" onclick="print()">Print</button></div>
+ <h1>${cdot(d.code)}After Action Report · ${code(d.code).name} · ${area(d.area).name}</h1>
+ <p class="sub"><span class="mono">${id}</span> · drill ${fmtd(r.date)} · proponent ${esc(dept(d.dept).name)} · due <b class="${!a.sigs.length&&a.due<S.demoDate?'e':''}">${fmt(a.due)}</b> · ${chip(a.status)}${a.reminders.length?` · reminders sent on day ${a.reminders.join(' and ')}`:''}</p>
+ <div class="card"><h2>Signatures</h2><div class="sigs">${AAR_STEPS.map((s,i)=>{const g=a.sigs[i];return`<div class="sig ${g?'done':i===a.sigs.length&&a.status!=='Approved'?'next':''}"><div class="k">${i+1}. ${s[1]}</div>
+ ${g?`<div><b>${esc(g.by)}</b></div><div class="mono muted">${fmt(g.at.slice(0,10))} ${g.at.slice(11)}</div>`:`<div class="muted">${i===a.sigs.length&&a.status!=='Approved'?'Waiting':'—'}</div>`}</div>`}).join('')}</div>
+ ${a.returns.length?a.returns.map(x=>`<div class="msgs"><div class="w">Returned ${fmt(x.at)} by ${esc(x.by)}: ${esc(x.comment)}</div></div>`).join(''):''}
+ <div class="row noprint" style="margin-top:12px">${canSignAAR(d)?`<button class="btn ok" onclick="A.aSign('${id}')">Sign: ${st[1]}</button>${st[2]!=='proponent'?`<button class="btn danger" onclick="A.modal('areturn','${id}')">Return to proponent</button>`:''}`:''}
+ ${!canSignAAR(d)&&st&&a.status!=='Approved'?`<span class="muted">Next signature: ${st[1]}${st[2]==='reviewer'?` (${esc(reviewerName(d))})`:''}. Switch role in the header to sign.</span>`:''}
+ ${a.status==='Approved'?`<span class="muted">Approved. ${S.gaps.filter(g=>g.drill===id).length} gap(s) created.</span> <button class="btn sm" onclick="UI.gf={status:'',type:'',owner:'',q:'${id}'};A.go('gaps')">View gaps</button>`:''}</div></div>
+ <div class="card"><h2>Continuity checks</h2><div id="achk" class="msgs">${aarChkHtml(d)}</div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.aMissing('${id}')">Add missing items from drill day</button>`:''}</div>
+ <div class="card"><h2>Overview</h2><div class="grid2"><div class="field"><label>Drill date on the report</label>${ed?`<input type="date" value="${a.date}" onchange="A.aSet('${id}','date',this.value)" class="big">`:fmtd(a.date)}</div>
+ <div class="field"><label>Participants</label>${ed?`<input type="number" min="0" value="${a.participants}" oninput="A.aSet('${id}','participants',this.value)" class="big" style="width:120px">`:a.participants}</div></div>
+ <div class="field"><label>Summary</label>${ed?`<textarea oninput="A.aSet('${id}','summary',this.value)" style="min-height:90px">${esc(a.summary)}</textarea>`:`<div>${esc(a.summary)}</div>`}</div></div>
+ <div class="card"><h2>Objectives</h2><div class="tbl"><table><thead><tr><th class="wrap">Objective (from the script)</th><th>Rating</th><th class="wrap">Evidence</th></tr></thead><tbody>
+ ${a.objectives.map((o,i)=>`<tr><td class="wrap">${esc(o.text)}</td><td>${ed?`<select onchange="A.aObj('${id}',${i},'rating',this.value)"><option value="">Rate…</option>${RATINGS.map(x=>`<option ${o.rating===x?'selected':''}>${x}</option>`).join('')}</select>`:chip(o.rating||'—')}</td>
+ <td class="wrap" style="min-width:200px">${ed?inp(o.note,`A.aObj('${id}',${i},'note',this.value)`,'placeholder="Optional"'):esc(o.note)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">The script had no objectives.</td></tr>'}</tbody></table></div></div>
+ <div class="card"><h2>Strengths</h2>${a.strengths.map((s,i)=>ed?`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px">${inp(s,`A.aList('${id}','strengths',${i},null,this.value)`)}<button class="btn sm danger" onclick="A.aDel('${id}','strengths',${i})">✕</button></div>`:`<div>• ${esc(s)}</div>`).join('')}
+ ${ed?`<button class="btn sm" onclick="A.aAdd('${id}','strengths')">+ Strength</button>`:''}</div>
+ <div class="card"><h2>Improvement plan (${a.improvements.length})</h2><p class="muted" style="font-size:13px;margin-top:0">Each item becomes a gap when the DOM approves the report. Leave the due date empty to use the default for the type (${S.settings.gapRule==='30'?'30 days for all':'by type, see Master lists'}).</p>
+ <div class="tbl"><table><thead><tr><th class="wrap">Area for improvement</th><th>Type</th><th>Owner</th><th>Due</th>${ed?'<th></th>':''}</tr></thead><tbody>
+ ${a.improvements.map((x,i)=>ed?`<tr><td class="wrap" style="min-width:240px">${inp(x.text,`A.aList('${id}','improvements',${i},'text',this.value)`)}</td>
+ <td><select onchange="A.aList('${id}','improvements',${i},'type',this.value)">${GAP_TYPES.map(t=>`<option ${x.type===t?'selected':''}>${t}</option>`).join('')}</select></td>
+ <td><select onchange="A.aList('${id}','improvements',${i},'owner',this.value)">${DEPTS.map(o=>`<option value="${o.id}" ${x.owner===o.id?'selected':''}>${esc(o.name)}</option>`).join('')}</select></td>
+ <td><input type="date" value="${x.due}" onchange="A.aList('${id}','improvements',${i},'due',this.value)"></td><td><button class="btn sm danger" onclick="A.aDel('${id}','improvements',${i})">✕</button></td></tr>`
+ :`<tr><td class="wrap">${esc(x.text)}</td><td>${x.type}</td><td>${esc(dept(x.owner).name)}</td><td>${x.due?fmt(x.due):`<span class="muted">+${S.settings.gapRule==='30'?30:GAP_DAYS[x.type]} days</span>`}</td></tr>`).join('')||`<tr><td colspan="5" class="muted">No improvement items.</td></tr>`}</tbody></table></div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.aAdd('${id}','improvements')">+ Improvement</button>`:''}
+ ${r.findings.filter(f=>!f.gap).length?`<p class="muted" style="font-size:13px">Other drill-day findings not flagged as gaps: ${r.findings.filter(f=>!f.gap).map(f=>esc(f.text)).join('; ')}</p>`:''}</div>`}
+
+/* ---------- Step 3 pages: gaps (UC7) ---------- */
+function gapFiltered(){const f=UI.gf;return S.gaps.filter(g=>(!f.status||(f.status==='open'?g.status!=='Closed':f.status==='overdue'?g.status!=='Closed'&&g.due<S.demoDate:g.status===f.status))&&
+ (!f.type||g.type===f.type)&&(!f.owner||g.owner===f.owner)&&(!f.esc||String(g.esc)===f.esc&&g.status!=='Closed')&&(!f.q||(g.id+' '+g.drill+' '+g.text).toLowerCase().includes(f.q.toLowerCase())))
+ .sort((a,b)=>(a.status==='Closed')-(b.status==='Closed')||(a.due<b.due?-1:1))}
+function pGaps(){const f=UI.gf,k=kpi(),rows=gapFiltered(),open=S.gaps.filter(g=>g.status!=='Closed');
+ const sel=(key,opts,lbl)=>`<select onchange="UI.gf.${key}=this.value;render()"><option value="">${lbl}</option>${opts.map(([v,t])=>`<option value="${v}" ${f[key]===v?'selected':''}>${t}</option>`).join('')}</select>`;
+ const byOwner={};open.filter(g=>g.due<S.demoDate).forEach(g=>byOwner[g.owner]=(byOwner[g.owner]||0)+1);
+ return`<h1>Gaps</h1><p class="sub">Every item in an approved report becomes a gap with an owner, a type and a due date. Open gaps escalate at 30 days (owner), 60 days (+ department head) and 90 days (+ executives). Facility gaps create an SAP maintenance request; overdue gaps go to Datix${S.settings.datixAuto?'':' (switched off)'}. Both are mock links in the demo.</p>
+ <div class="kpis"><div class="tile ${k.gAll?(k.gClosed/k.gAll>=.8?'good':'bad'):''}"><div class="k">Closed</div><div class="v">${pct(k.gClosed,k.gAll)}</div><div class="h">${k.gClosed} of ${k.gAll} · target above 80%</div></div>
+ <div class="tile"><div class="k">Open</div><div class="v">${k.gOpen}</div><div class="h">${open.filter(g=>g.status==='In progress').length} in progress</div></div>
+ <div class="tile ${k.gOver?'bad':''}"><div class="k">Overdue</div><div class="v">${k.gOver}</div><div class="h">sent to Datix</div></div>
+ <div class="tile ${k.gL3?'bad':''}"><div class="k">Open over 90 days</div><div class="v">${k.gL3}</div><div class="h">escalated to executives</div></div></div>
+ <div class="grid2"><div class="card"><h2>Overdue by owner</h2>${Object.keys(byOwner).length?bars(Object.entries(byOwner).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([o,n])=>[esc(dept(o).name),n]),'var(--err)'):'<p class="muted">None.</p>'}</div>
+ <div class="card"><h2>Open by escalation level</h2>${bars([0,1,2,3].map(l=>[l?ESC[l]:'Under 30 days',open.filter(g=>g.esc===l).length]),'var(--purple)')}</div></div>
+ <div class="filters">${sel('status',[['open','Open (all)'],['Open','Open, not started'],['In progress','In progress'],['overdue','Overdue'],['Closed','Closed']],'All statuses')}${sel('type',GAP_TYPES.map(t=>[t,t]),'All types')}
+ ${sel('owner',DEPTS.filter(o=>S.gaps.some(g=>g.owner===o.id)).map(o=>[o.id,o.name]),'All owners')}${sel('esc',[['1','30+ days'],['2','60+ days'],['3','90+ days']],'Any escalation')}
+ <input placeholder="Search gap, drill or text" value="${esc(f.q)}" onchange="UI.gf.q=this.value;render()"><button class="btn sm" onclick="A.download('gaps')">Download CSV</button></div>
+ <div class="muted" style="font-size:13px;margin-bottom:6px">${rows.length} gaps</div>
+ <div class="tbl"><table><thead><tr><th>Gap</th><th class="wrap">Description</th><th>Type</th><th>Owner</th><th>Created</th><th>Due</th><th>Status</th><th>Escalation</th><th>Links</th></tr></thead><tbody>
+ ${rows.slice(0,200).map(g=>{const ov=g.status!=='Closed'&&g.due<S.demoDate;return`<tr class="click" onclick="A.openGap('${g.id}')"><td class="mono">${g.id}</td><td class="wrap" style="min-width:240px">${esc(g.text)}<div class="muted mono" style="font-size:12px">${g.drill}</div></td><td>${g.type}</td><td>${esc(dept(g.owner).name)}</td>
+ <td>${fmt(g.created)}</td><td class="${ov?'e':''}">${fmt(g.due)}</td><td>${chip(ov?'Overdue':g.status)}</td><td>${g.status==='Closed'?'':g.esc?`<span class="chip ${g.esc>=3?'c-err':g.esc===2?'c-warn':'c-grey'}">${[30,60,90][g.esc-1]}+ days</span>`:''}</td>
+ <td class="mono" style="font-size:12px">${g.maint?g.maint.no:''}${g.maint&&g.datix?'<br>':''}${g.datix||''}</td></tr>`}).join('')||'<tr><td colspan="9" class="muted">No gaps match.</td></tr>'}</tbody></table></div>`}
+function gapDrawer(){const g=S.gaps.find(x=>x.id===UI.gap);if(!g)return'';const own=S.role==='admin'||(S.role==='owner'&&g.owner===S.dept),d=drill(g.drill),ov=g.status!=='Closed'&&g.due<S.demoDate;
+ return`<div class="overlay" onclick="if(event.target===this)A.close()"><div class="drawer"><div class="row" style="justify-content:space-between"><span class="mono muted">${g.id}</span><button class="btn sm" onclick="A.close()">Close</button></div>
+ <h1 style="margin-top:8px">${esc(g.text)}</h1><div>${chip(ov?'Overdue':g.status)} ${g.legacy?chip('Carried over from 2025'):''}</div>
+ <dl class="kv"><dt>Type</dt><dd>${g.type}</dd><dt>Owner</dt><dd>${esc(dept(g.owner).name)}<div class="muted">CPH: ${esc(dept(g.owner).head)}</div></dd>
+ <dt>From drill</dt><dd>${d?`<a href="#" onclick="A.open('${d.id}');return false" class="mono">${d.id}</a> · ${code(d.code).name}`:`<span class="mono">${g.drill}</span>`}</dd>
+ <dt>Created</dt><dd>${fmt(g.created)} · ${diffDays(g.created,g.closedAt||S.demoDate)} days ${g.status==='Closed'?'to close':'open'}</dd><dt>Due</dt><dd class="${ov?'e':''}">${fmt(g.due)}</dd>
+ ${g.closedAt?`<dt>Closed</dt><dd>${fmt(g.closedAt)}</dd>`:''}<dt>Escalation</dt><dd>${ESC[g.esc]}</dd>
+ ${g.maint?`<dt>SAP maintenance</dt><dd><span class="mono">${g.maint.no}</span> ${chip(g.maint.status==='Completed'?'Completed':g.maint.status==='In process'?'In progress':'Submitted')} <span class="muted">(mock)</span></dd>`:''}
+ ${g.datix?`<dt>Datix</dt><dd><span class="mono">${g.datix}</span> <span class="muted">(mock)</span></dd>`:''}</dl>
+ <div class="row" style="margin:12px 0">${own&&g.status==='Open'?`<button class="btn" onclick="A.gStatus('${g.id}','In progress','')">Start work</button>`:''}
+ ${own&&g.status!=='Closed'?`<button class="btn ok" onclick="A.modal('gclose','${g.id}')">Close gap</button>`:''}${S.role==='admin'&&g.status==='Closed'?`<button class="btn" onclick="A.gStatus('${g.id}','Open','Reopened after EPPU check')">Reopen</button>`:''}
+ ${own&&g.maint&&g.maint.status!=='Completed'?`<button class="btn" onclick="A.gMaint('${g.id}')">Simulate SAP update</button>`:''}<button class="btn" onclick="A.modal('gnote','${g.id}')">Add note</button></div>
+ ${!own?`<p class="muted" style="font-size:13px">Switch to "Gap owner / CPH" with ${esc(dept(g.owner).name)} in the header to update this gap.</p>`:''}
+ <h2 style="margin-top:20px">History</h2><div class="hist">${g.notes.slice().reverse().map(h=>`<div><div class="at">${fmt(h.at)} · ${esc(h.who)}</div>${esc(h.text)}</div>`).join('')}</div></div></div>`}
+
+/* ---------- KPI dashboard (SAC on Datasphere in production) ---------- */
+function pKPI(){const k=kpi(),ds=S.drills;const T=(lbl,v,h,good)=>`<div class="tile ${good===undefined?'':good?'good':'bad'}"><div class="k">${lbl}</div><div class="v">${v}</div><div class="h">${h}</div></div>`;
+ const months=MON.map((m,i)=>{const mm=pad(i+1),pl=ds.filter(d=>(d.original||d.planned||'').slice(5,7)===mm).length,dn=ds.filter(d=>d.status==='Completed'&&d.doneDate.slice(5,7)===mm).length;return[m,pl,dn]});
+ const mx=Math.max(1,...months.map(m=>m[1]));const byType={};S.gaps.forEach(g=>{byType[g.type]=byType[g.type]||[0,0];byType[g.type][g.status==='Closed'?0:1]++});
+ return`<h1>KPI dashboard</h1><div class="note">In production this page is a SAP Analytics Cloud story on Datasphere (UC15, UC17), fed by the same records. Here it is computed in the browser. Demo date ${fmtd(S.demoDate)}.</div>
+ <div class="kpis">${T('Planned vs required',pct(k.dated,k.required),`${k.dated} of ${k.required} (UC2)`)}${T('Done vs planned to date',pct(k.comp,k.due),`${k.comp} of ${k.due} (UC2)`,k.due?k.comp/k.due>=.9:undefined)}
+ ${T('Held on approved date',pct(k.held,k.comp),'target above 90% (UC3)',k.comp?k.held/k.comp>=.9:undefined)}${T('Scripts approved on time',pct(k.sOnTime,k.sAppr),`${k.sRounds} review rounds avg (UC4)`,k.sAppr?k.sOnTime/k.sAppr>=.9:undefined)}
+ ${T('Staff in at least 1 drill',pct(k.staffIn,STAFF.length),`${k.staffIn} of ${STAFF.length} (UC5)`)}${T('Reports on time',pct(k.aOnTime,k.aBase),`${k.aDays} days to final approval (UC6)`,k.aBase?k.aOnTime/k.aBase>=.9:undefined)}
+ ${T('Gaps closed',pct(k.gClosed,k.gAll),`target above 80% · ${k.gOver} overdue (UC7)`,k.gAll?k.gClosed/k.gAll>=.8:undefined)}${T('Open over 90 days',k.gL3,'escalated to executives (UC7)',k.gL3===0)}</div>
+ <div class="card"><h2>Drills by month: approved plan vs completed</h2><div class="cols">${months.map(([m,p,d])=>`<div class="col"><div class="cb"><div class="c1" style="height:${p/mx*100}%" title="${p} planned"></div><div class="c2" style="height:${d/mx*100}%" title="${d} completed"></div></div><div class="cl">${m}</div></div>`).join('')}</div>
+ <div class="row muted" style="font-size:13px;margin-top:8px"><span><span class="dot" style="background:var(--ice)"></span>Planned</span><span><span class="dot" style="background:var(--blue)"></span>Completed</span></div></div>
+ <div class="grid2"><div class="card"><h2>Gaps by type</h2>${bars(GAP_TYPES.map(t=>[t,(byType[t]||[0,0])[1],` open · ${(byType[t]||[0,0])[0]} closed`]),'var(--warn)')}</div>
+ <div class="card"><h2>Report status</h2>${bars(['Draft','Returned','Prepared','Reviewed','Concurred','Approved'].map(s=>[s,ds.filter(d=>d.aar&&d.aar.status===s).length]),'var(--purple)')}</div></div>
+ <div class="card"><h2>By area</h2><div class="tbl"><table><thead><tr><th>Area</th><th>Drills</th><th>Done to date</th><th>Held on date</th><th>Scripts on time</th><th>Reports on time</th><th>Open gaps</th><th>Overdue gaps</th></tr></thead><tbody>
+ ${AREAS.map(a=>{const x=ds.filter(d=>d.area===a.id),due=x.filter(d=>eff(d)&&eff(d)<=S.demoDate&&d.original),c=x.filter(d=>d.status==='Completed'),sa=x.filter(d=>d.script&&d.script.status==='Approved'),
+  ap=x.filter(d=>d.aar&&d.aar.sigs.length),g=S.gaps.filter(g=>g.area===a.id&&g.status!=='Closed');
+  return`<tr><td><b>${a.id}</b> <span class="muted">${a.name}</span></td><td>${x.length}</td><td>${pct(c.length,due.length)}</td><td>${pct(c.filter(d=>d.doneDate===d.original).length,c.length)}</td>
+  <td>${pct(sa.filter(d=>d.script.approvedAt<=d.script.due).length,sa.length)}</td><td>${pct(ap.filter(d=>d.aar.sigs[0].at.slice(0,10)<=d.aar.due).length,ap.length)}</td><td>${g.length}</td><td>${g.filter(x=>x.due<S.demoDate).length}</td></tr>`}).join('')}</tbody></table></div></div>`}
+
 function pMOH(){const ok=['Approved','Sent to MOH & MSMD'].includes(S.planStatus);const rows=S.drills.slice().sort((a,b)=>a.area.localeCompare(b.area)||(eff(a)<eff(b)?-1:1));
  return`<h1>MOH and Aramco MSMD copy</h1><p class="sub">The approved schedule in a simple table. The real submission format is still to be confirmed with EPPU (open point). ${S.sentAt?`Sent on ${fmt(S.sentAt)}.`:''}</p>
  ${ok?`<div class="row noprint" style="margin-bottom:12px">${S.role==='admin'&&S.planStatus==='Approved'?'<button class="btn primary" onclick="A.sendMOH()">Send copy to MOH and MSMD</button>':''}<button class="btn" onclick="csv()">Download CSV</button><button class="btn" onclick="print()">Print / save as PDF</button></div>
@@ -718,13 +968,15 @@ function csv(){const h=['No','Area','Facility','Code','Meaning','Required period
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+t],{type:'text/csv'}));a.download=`drill-schedule-${YEAR}.csv`;a.click()}
 
 function pMaster(){const locked=S.planStatus!=='Not started',t=UI.ml;
- const tabs=[['freq','Frequency rules'],['codes','Colour codes'],['reasons','Change reasons'],['roles','Drill roles'],['hva','Hazards (HVA)'],['check','Observer checklist'],['gaps','Finding types'],['settings','Settings (open points)']];
+ const tabs=[['freq','Frequency rules'],['codes','Colour codes'],['reasons','Change reasons'],['roles','Drill roles'],['hva','Hazards (HVA)'],['check','Observer checklist'],['gaps','Gap types and deadlines'],['settings','Settings (open points)']];
  let body='';
  if(t==='roles')body=`<p class="sub">Roles a script can assign (UC4). Every script needs a drill controller and an evaluator / observer.</p><ul class="list">${ROLES.map(r=>`<li>${r}</li>`).join('')}</ul>`;
  if(t==='hva')body=`<p class="sub">Sample hazard vulnerability analysis, ranked. A script can link to one (optional unless the setting says otherwise).</p><ol class="list">${HVA.map(h=>`<li>${h}</li>`).join('')}</ol>`;
  if(t==='check')body=`<p class="sub">The observer checklist is the same for every code except the Response section. Based on generic HSEEP evaluation guides.</p>${CHK_GENERIC.map(([s,i])=>`<div class="sec">${s}</div><ul class="list">${i.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}
   <div class="sec">Response, by code</div><div class="tbl"><table><tbody>${CODES.map(c=>`<tr><td>${cdot(c.id)}${c.name}</td><td class="wrap">${CHK_CODE[c.id].join(' · ')}</td></tr>`).join('')}</tbody></table></div>`;
- if(t==='gaps')body=`<p class="sub">Types a finding can have. Step 3 turns findings marked "possible gap" into gaps with an owner and a due date.</p><ul class="list">${GAP_TYPES.map(g=>`<li>${g}</li>`).join('')}</ul>`;
+ if(t==='gaps')body=`<p class="sub">The 8 types a finding or gap can have, the default owner and the default deadline. ${S.settings.gapRule==='30'?'<b>The setting currently uses one 30-day rule for all types.</b>':'Deadlines by type are in use (setting).'}</p>
+  <div class="tbl"><table><thead><tr><th>Type</th><th>Days to close</th><th>Default owner (DH)</th><th>Also creates</th></tr></thead><tbody>${GAP_TYPES.map(g=>`<tr><td>${g}</td><td>${GAP_DAYS[g]}</td><td>${esc(dept(defaultOwner(g,{area:'DH',dept:'(proponent)'})).name)}</td><td>${g==='Facility'?'SAP maintenance request':''}</td></tr>`).join('')}</tbody></table></div>
+  <p class="muted" style="font-size:13px">Escalation for every type: 30 days open → owner, 60 → + department head (CPH), 90 → + executives. Past the due date → Datix.</p>`;
  if(t==='freq')body=`<p class="sub">How often each code must be drilled in each area. The plan is generated from this table. ${locked?'<b>Locked</b> because the plan is generated; Reset to change it.':S.role==='admin'?'You can change any cell before generating.':'Only the EPPU admin can change it.'}</p>
  <div class="tbl"><table><thead><tr><th>Code</th>${AREAS.map(a=>`<th>${a.id}</th>`).join('')}<th>Per year</th></tr></thead><tbody>
  ${CODES.map(c=>`<tr><td>${cdot(c.id)}${c.name}</td>${AREAS.map(a=>`<td>${!locked&&S.role==='admin'?`<select onchange="A.setFreq('${c.id}','${a.id}',this.value)">${Object.entries(FREQ).map(([k,v])=>`<option value="${k}" ${S.freq[c.id][a.id]===k?'selected':''}>${v}</option>`).join('')}</select>`:FREQ[S.freq[c.id][a.id]]}</td>`).join('')}
@@ -741,6 +993,9 @@ function pMaster(){const locked=S.planStatus!=='Not started',t=UI.ml;
  <div class="field"><label>Script due this many days before the drill</label><input type="number" min="1" max="60" ${dis} value="${S.settings.scriptDue}" onchange="A.setSetting('scriptDue',+this.value)" style="width:90px"></div>
  <div class="field"><label><input type="checkbox" ${dis} ${S.settings.requireScript?'checked':''} onchange="A.setSetting('requireScript',this.checked)"> A drill can run only with an approved script</label></div>
  <div class="field"><label><input type="checkbox" ${dis} ${S.settings.hvaRequired?'checked':''} onchange="A.setSetting('hvaRequired',this.checked)"> Each script must link to a ranked hazard (HVA)</label></div>
+ <div class="field"><label>After Action Report due this many days after the drill</label><input type="number" min="3" max="60" ${dis} value="${S.settings.aarDue}" onchange="A.setSetting('aarDue',+this.value)" style="width:90px"></div>
+ <div class="field"><label>Gap deadline</label><select ${dis} onchange="A.setSetting('gapRule',this.value)"><option value="type" ${S.settings.gapRule==='type'?'selected':''}>By gap type (see Gap types)</option><option value="30" ${S.settings.gapRule==='30'?'selected':''}>One 30-day rule for all gaps</option></select></div>
+ <div class="field"><label><input type="checkbox" ${dis} ${S.settings.datixAuto?'checked':''} onchange="A.setSetting('datixAuto',this.checked)"> Send overdue gaps to Datix automatically</label></div>
  <div class="field"><label>Deadline for proponents to pick dates</label><input type="date" ${dis} value="${S.settings.pickDeadline}" onchange="A.setSetting('pickDeadline',this.value)" style="width:170px"></div>`}
  return`<h1>Master lists</h1><p class="sub">UC19. Lists the app owns. In production they are maintained in the app and published to Datasphere so the dashboards use the same codes.</p>
  <div class="tabs">${tabs.map(([k,l])=>`<button class="${t===k?'on':''}" onclick="UI.ml='${k}';render()">${l}</button>`).join('')}</div><div class="card">${body}</div>`}
@@ -760,7 +1015,36 @@ function pData(){const t=UI.ds,q=UI.dsq.toLowerCase();let body='';
 function pEmails(){return`<h1>Email log</h1><p class="sub">The messages the app would send. In the demo nothing leaves the browser. On BTP these come from SAP Build Process Automation.</p>
  ${S.emails.length?S.emails.slice(0,150).map(m=>`<div class="email"><div class="meta">${fmt(m.at)} · to ${esc(m.to)}</div><b>${esc(m.subject)}</b><div class="muted">${esc(m.body)}</div></div>`).join('')+(S.emails.length>150?`<p class="muted">${S.emails.length-150} older messages not shown.</p>`:''):'<div class="card muted">No messages yet.</div>'}`}
 
-function pAbout(){return`<h1>About this demo</h1><p class="sub">Steps 1 and 2 of 3 of the drill lifecycle app: the annual schedule (UC2), change control (UC3), master lists (UC19), the drill script (UC4) and drill day (UC5). Step 3 adds the After Action Report and gaps (UC6, UC7).</p>
+/* Data model for the SAP handover (entities the app owns; master data stays in Datasphere) */
+const MODEL=[
+ ['Drill','UC2, UC3','id, code, area, proponentDept, frequency, period, windowStart, windowEnd, shift, plannedDate, originalApprovedDate, currentDate, status, changeCount, doneDate, notDoneDate, notDoneReason','Open → Date proposed → Submitted → Scheduled → (Change pending) → Completed | Redo required'],
+ ['PlanApproval','UC2','unit (area or whole plan), status, decidedBy, decidedAt, comment','Draft → Submitted → Approved | Returned'],
+ ['ChangeRequest','UC3','id, drill, type (reschedule | redo), fromDate, toDate, reason, comment, warnings, requestedBy, requestedAt, decision, decidedBy, decidedAt','Pending → Approved | Rejected'],
+ ['Script','UC4','drill, requestedAt, dueDate, story, location, hazard (HVA), mapImage, objectives[], submittedAt, approvedAt, warnings[]','Requested → Draft → Submitted → Approved | Returned'],
+ ['ScriptEvent / ScriptRole','UC4','minute, event, expectedAction, role · role, staffBadge',''],
+ ['ReviewRound','UC4','script, at, by, decision, comment',''],
+ ['DrillDayRecord','UC5','drill, date, observer, startTime, endTime, result, checklist answers (item, Met/Partly/Not met/N/A, note)','In progress → Completed | Not completed'],
+ ['Participant / Finding','UC5','record, staffBadge · record, text, type (8), possibleGap',''],
+ ['AfterActionReport','UC6','drill, created, dueDate, remindersSent, reportDate, participants, summary, objective ratings, strengths[]','Draft → Prepared → Reviewed → Concurred → Approved | Returned'],
+ ['Improvement / Signature','UC6','report, text, type, ownerDept, dueDate · report, step, signedBy, signedAt (date and time)',''],
+ ['Gap','UC7','id, drill, code, area, text, type, ownerDept, created, dueDate, status, closedAt, escalationLevel, maintenanceRequestNo, datixRef, notes[]','Open → In progress → Closed (EPPU can reopen)'],
+ ['EmailLog','all','at, to, subject, body','']];
+function pAbout(){return`<h1>About this demo</h1><p class="sub">The complete drill lifecycle app, cases 2 to 7: the annual schedule (UC2), change control (UC3), master lists (UC19), the drill script (UC4), drill day (UC5), the After Action Report (UC6) and gaps (UC7), plus a KPI dashboard and the handover pack for SAP at the bottom of this page.</p>
+ <div class="card"><h2>Step 3 walkthrough</h2><ol class="list">
+ <li>Press <b>Load mid-year</b> on Overview (demo date 15 Jul 2026), then open the <b>KPI dashboard</b>.</li>
+ <li>As <b>Proponent</b>, open After Action Reports, pick one to prepare, rate the objectives, use "Add missing items from drill day" and sign. All 8 continuity checks must be green.</li>
+ <li>Switch to <b>Code reviewer</b>, <b>OEMC</b> and <b>DOM approver</b> in turn and sign. Each signature is stamped with date and time. When the DOM signs, each improvement becomes a gap.</li>
+ <li>Open <b>Gaps</b>: filter by overdue or 90+ days. The gap "Radio not transmitting…" from IT-DH-Y has a SAP maintenance request.</li>
+ <li>Switch to <b>Gap owner / CPH</b>, pick a department and close a gap with evidence. Move the demo date forward to watch escalation and Datix referral.</li></ol></div>
+ <div class="card"><h2>Business rules in step 3</h2><ol class="list">
+ <li>BR-19 A report opens when a drill is recorded as completed, pre-filled from the script (objectives) and drill day (participants, findings flagged as possible gaps, strengths).</li>
+ <li>BR-20 Due ${S.settings.aarDue} days after the drill (setting); reminders to the proponent on day 7 and day 14 while unsigned.</li>
+ <li>BR-21 Eight continuity checks must pass before the first signature: date and participants match drill day, summary written, every objective rated, every "Not met" checklist item and every possible-gap finding in the improvement plan, every item has type and owner, at least one strength.</li>
+ <li>BR-22 Four signatures in order, each with date and time: prepared (proponent), reviewed (reviewer role for the code), OEMC concurs, DOM approves. Any signer after the first can return it; returning clears all signatures.</li>
+ <li>BR-23 On DOM approval each improvement becomes a gap. Due date: set on the item, or by type, or one 30-day rule (setting).</li>
+ <li>BR-24 Facility gaps create an SAP maintenance request (mock). Overdue gaps go to Datix (mock, setting).</li>
+ <li>BR-25 Escalation by days open: 30 → owner, 60 → + department head (CPH), 90 → + executives.</li>
+ <li>BR-26 Closing a gap needs a description of what was done. EPPU can reopen. KPI: share closed, target above 80%.</li></ol></div>
  <div class="card"><h2>Step 2 walkthrough</h2><ol class="list">
  <li>Press <b>Load mid-year</b> on Overview (demo date 15 Jul 2026).</li>
  <li>As <b>Proponent</b>, open Drill scripts, pick a requested script, start from the template and edit it. Change an age or a ward in one event and watch the check flag it. Submit.</li>
@@ -800,6 +1084,21 @@ function pAbout(){return`<h1>About this demo</h1><p class="sub">Steps 1 and 2 of
  <tr><td>Drill records</td><td class="wrap">This browser's storage; Reset restores sample data</td><td class="wrap">SAP HANA Cloud, replicated to Datasphere</td></tr>
  <tr><td>People, CPH, facilities</td><td class="wrap">Sample Datasphere tab, read-only</td><td class="wrap">Live from Datasphere (BDC)</td></tr>
  <tr><td>KPIs</td><td class="wrap">Overview tiles</td><td class="wrap">SAC on Datasphere (UC15, UC17)</td></tr></tbody></table></div></div>
+ <div class="card"><h2>Handover pack for SAP</h2><p class="muted">What the SAP team needs to rebuild this on BTP: the records the app owns, who does what, the business rules above, and the sample data.</p>
+ <div class="row" style="margin-bottom:12px"><button class="btn primary" onclick="A.download('json')">Download data model + sample data (JSON)</button><button class="btn" onclick="A.download('drills')">Drills (CSV)</button><button class="btn" onclick="A.download('gaps')">Gaps (CSV)</button><button class="btn" onclick="csv()">Approved schedule (CSV)</button></div>
+ <h2>Records the app owns (SAP HANA Cloud, replicated to Datasphere)</h2><div class="tbl"><table><thead><tr><th>Entity</th><th>Case</th><th class="wrap">Main fields</th><th class="wrap">Status flow</th></tr></thead><tbody>
+ ${MODEL.map(([e,u,f,s])=>`<tr><td><b>${e}</b></td><td>${u}</td><td class="wrap" style="min-width:280px;font-size:13px">${f}</td><td class="wrap" style="font-size:13px">${s}</td></tr>`).join('')}</tbody></table></div>
+ <h2 style="margin-top:16px">Read from Datasphere (never copied)</h2><p>Staff (badge, name, job, department, area, training status), departments and department heads (CPH), areas and facilities, public holiday calendar.</p>
+ <h2 style="margin-top:16px">Roles</h2><div class="tbl"><table><thead><tr><th>Role</th><th class="wrap">Can do</th></tr></thead><tbody>
+ <tr><td>EPPU admin</td><td class="wrap">Master lists and settings, generate the plan, submit to OEMC, send to MOH / MSMD, record drill day, reopen gaps</td></tr>
+ <tr><td>Proponent</td><td class="wrap">Pick dates, request changes and redos, write scripts, prepare and sign reports (own department)</td></tr>
+ <tr><td>OEMC reviewer</td><td class="wrap">Approve or return the plan, change requests and scripts; concur on reports</td></tr>
+ <tr><td>Observer</td><td class="wrap">Drill-day checklist, participants, findings, result; postpone</td></tr>
+ <tr><td>Code reviewer</td><td class="wrap">Second signature on reports for their colour code (master list)</td></tr>
+ <tr><td>DOM approver</td><td class="wrap">Final report approval, which creates the gaps</td></tr>
+ <tr><td>Gap owner / CPH</td><td class="wrap">Update and close own department's gaps; receives escalations</td></tr></tbody></table></div>
+ <h2 style="margin-top:16px">Integrations</h2><ul class="list"><li>Datasphere (BDC): master data in, app records out for SAC dashboards.</li><li>SAP S/4HANA PM: maintenance request for facility gaps (Integration Suite).</li>
+ <li>Datix: incident record for overdue gaps (Integration Suite).</li><li>Email and reminders: SAP Build Process Automation.</li><li>MOH / Aramco MSMD: schedule export, format to confirm.</li></ul></div>
  <p class="muted" style="font-size:13px">All names, departments and records are fictional. Changes are saved only in this browser.</p>`}
 
 /* ---------- Drawer and modals ---------- */
@@ -816,7 +1115,10 @@ function drawer(){const d=drill(UI.drawer);if(!d)return'';const w=warns(d),c=cod
  ${canChange(d)?`<button class="btn primary" onclick="A.modal('${d.status==='Redo required'?'redo':'change'}','${d.id}')">${d.status==='Redo required'?'Request redo':'Request change'}</button>`:''}
  ${d.script?`<button class="btn" onclick="A.openScript('${d.id}')">${canEditScript(d)?'Edit script':'View script'}</button>`:''}
  ${canRun(d)?`<button class="btn primary" onclick="A.openRun('${d.id}')">Drill day</button>`:''}
- ${d.run&&d.run.result?`<button class="btn" onclick="UI.rid='${d.id}';A.go('run')">Drill-day record</button>`:''}</div>
+ ${d.run&&d.run.result?`<button class="btn" onclick="UI.rid='${d.id}';A.go('run')">Drill-day record</button>`:''}
+ ${d.aar?`<button class="btn ${canSignAAR(d)?'primary':''}" onclick="A.openAAR('${d.id}')">After Action Report</button>`:''}
+ ${S.gaps.some(g=>g.drill===d.id)?`<button class="btn" onclick="UI.gf={status:'',type:'',owner:'',q:'${d.id}',esc:''};A.go('gaps')">Gaps (${S.gaps.filter(g=>g.drill===d.id).length})</button>`:''}</div>
+ ${d.aar?`<dl class="kv"><dt>Report</dt><dd>${chip(d.aar.status)} due ${fmt(d.aar.due)} · ${d.aar.sigs.length} of 4 signatures</dd></dl>`:''}
  ${canRecord(d)&&!scriptOk(d)?'<p class="e" style="font-size:13px">The drill date has come but the script is not approved, so drill day cannot be recorded (setting).</p>':''}
  ${d.script?`<dl class="kv"><dt>Script</dt><dd>${chip(d.script.status)} due ${fmt(d.script.due)}${d.script.rounds.length?` · ${d.script.rounds.length} review round(s)`:''}</dd>
  ${d.run&&d.run.result?`<dt>Drill day</dt><dd>${d.run.participants.length} participants · ${d.run.findings.length} finding(s)${d.run.findings.some(f=>f.gap)?` · <span class="w">${d.run.findings.filter(f=>f.gap).length} possible gap(s)</span>`:''}</dd>`:''}</dl>`:''}
@@ -833,6 +1135,11 @@ function modal(){const m=UI.modal;if(!m)return'';let h='';
   <div class="field"><label>Result</label><select id="m-res" onchange="document.getElementById('m-rw').style.display=this.value==='Completed'?'none':'grid'"><option>Completed</option><option>Not completed</option></select></div>
   <div class="field" id="m-rw" style="display:none"><label>Why was it not completed?</label><textarea id="m-why"></textarea></div>
   <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn primary" onclick="A.record('${d.id}',val('m-res'),val('m-why'))">Save</button></div>`}
+ if(m.type==='areturn')h=`<h2>Return report ${m.id} to the proponent</h2><div class="field"><label>What must change? (required)</label><textarea id="m-c"></textarea></div>
+  <p class="muted" style="font-size:13px">All signatures are cleared and the report goes back to Draft.</p>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn danger" onclick="A.aReturn('${m.id}',val('m-c'))">Return</button></div>`;
+ if(m.type==='gclose'||m.type==='gnote')h=`<h2>${m.type==='gclose'?'Close gap':'Add a note to'} ${m.id}</h2><div class="field"><label>${m.type==='gclose'?'What was done? (evidence, required)':'Note'}</label><textarea id="m-c"></textarea></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn ${m.type==='gclose'?'ok':'primary'}" onclick="${m.type==='gclose'?`A.gStatus('${m.id}','Closed',val('m-c'))`:`A.gNote('${m.id}',val('m-c'))`}">${m.type==='gclose'?'Close gap':'Add note'}</button></div>`;
  if(m.type==='sreturn')h=`<h2>Return script ${m.id} with comments</h2><div class="field"><label>What must the proponent change? (required)</label><textarea id="m-c">${esc(drill(m.id).script.warnings.join('\n'))}</textarea></div>
   <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn danger" onclick="A.sDecide('${m.id}',false,val('m-c'))">Return</button></div>`;
  if(m.type==='return'||m.type==='reject')h=`<h2>${m.type==='return'?'Return '+unitName(m.id)+' to EPPU':'Reject '+m.id}</h2><div class="field"><label>Comment (required)</label><textarea id="m-c"></textarea></div>
@@ -843,19 +1150,19 @@ function liveCheck(id,mode){const v=val('m-to'),el=document.getElementById('m-ch
  el.innerHTML=r.e.map(x=>`<div class="e">✕ ${esc(x)}</div>`).join('')+r.w.map(x=>`<div class="w">⚠ ${esc(x)}</div>`).join('')+(!r.e.length&&!r.w.length?'<div class="ok">✓ No conflicts found</div>':'')}
 
 /* ---------- Shell ---------- */
-const PAGES=[['Work',[['overview','Overview'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy'],['scripts','Drill scripts'],['day','Drill day']]],
+const PAGES=[['Work',[['overview','Overview'],['kpi','KPI dashboard'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy'],['scripts','Drill scripts'],['day','Drill day'],['reports','After Action Reports'],['gaps','Gaps']]],
  ['Data',[['master','Master lists'],['data','Datasphere (sample)'],['emails','Email log']]],['Help',[['about','About this demo']]]];
 function render(){const n=counts();const props=[...new Set(S.drills.length?S.drills.map(d=>d.dept):CODES.flatMap(c=>AREAS.map(a=>proponentFor(c.id,a.id))))];
- const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,master:pMaster,data:pData,emails:pEmails,about:pAbout}[UI.page]();
+ const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,reports:pReports,aar:pAAR,gaps:pGaps,kpi:pKPI,master:pMaster,data:pData,emails:pEmails,about:pAbout}[UI.page]();
  document.getElementById('app').innerHTML=`<header class="shell"><div class="brand"><span class="mark">DR</span>EPPU Drill Manager</div><span class="demo-tag">Demo · sample data</span><span class="sp"></span>
- <label>View as <select onchange="A.setRole(this.value)"><option value="admin" ${S.role==='admin'?'selected':''}>EPPU admin</option><option value="proponent" ${S.role==='proponent'?'selected':''}>Proponent</option><option value="oemc" ${S.role==='oemc'?'selected':''}>OEMC reviewer</option><option value="observer" ${S.role==='observer'?'selected':''}>Observer</option></select></label>
- ${S.role==='proponent'?`<label>Dept <select onchange="A.setDept(this.value)">${DEPTS.filter(d=>props.includes(d.id)).map(d=>`<option value="${d.id}" ${S.dept===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select></label>`:''}
+ <label>View as <select onchange="A.setRole(this.value)">${Object.entries(ROLE_NAMES).map(([k,l])=>`<option value="${k}" ${S.role===k?'selected':''}>${l}</option>`).join('')}</select></label>
+ ${S.role==='proponent'||S.role==='owner'?`<label>Dept <select onchange="A.setDept(this.value)">${DEPTS.filter(d=>S.role==='owner'?(!S.gaps.length||S.gaps.some(g=>g.owner===d.id)):props.includes(d.id)).map(d=>`<option value="${d.id}" ${S.dept===d.id?'selected':''}>${esc(d.name)}${S.role==='owner'?` (${S.gaps.filter(g=>g.owner===d.id&&g.status!=='Closed').length} open)`:''}</option>`).join('')}</select></label>`:''}
  <label>Demo date <input type="date" value="${S.demoDate}" onchange="A.setDate0(this.value)"></label>
  <button class="btn sm" onclick="A.reset(S.demoDate>'2026-01-01'?'mid':'fresh')" title="Restore the sample data in this browser">Reset</button></header>
- <div class="layout"><nav>${PAGES.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([k,l])=>`<button class="${UI.page===k?'on':''}" onclick="A.go('${k}')"><span>${l}</span>${(b=>b?`<span class="badge">${b}</span>`:'')({approvals:n.appr,scripts:n.scripts,day:n.day}[k])}</button>`).join('')).join('')}</nav>
- <main>${page}</main></div>${drawer()}${modal()}`;
+ <div class="layout"><nav>${PAGES.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([k,l])=>`<button class="${UI.page===k?'on':''}" onclick="A.go('${k}')"><span>${l}</span>${(b=>b?`<span class="badge">${b}</span>`:'')({approvals:n.appr,scripts:n.scripts,day:n.day,reports:n.reports,gaps:n.gaps}[k])}</button>`).join('')).join('')}</nav>
+ <main>${page}</main></div>${drawer()}${gapDrawer()}${modal()}`;
  renderTable()}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(UI.drawer||UI.modal))A.close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(UI.drawer||UI.modal||UI.gap))A.close()});
 render();
 </script>
 </body>
