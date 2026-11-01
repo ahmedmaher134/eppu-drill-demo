@@ -695,7 +695,7 @@ function pOverview(){const k=kpi(),todo=[];
  const heat=AREAS.map(a=>{const row=MON.map((m,i)=>S.drills.filter(d=>d.area===a.id&&eff(d)&&+eff(d).slice(5,7)===i+1).length);return[a.id,row]});
  const mx=Math.max(1,...heat.flatMap(h=>h[1]));
  return`<h1>Drill plan ${YEAR}</h1><p class="sub">Status ${chip(S.planStatus)} · Viewing as <b>${esc(me())}</b> · Demo date ${fmtd(S.demoDate)}</p>
- <div class="banner noprint"><div><b>Two starting points.</b> <span class="muted">Planning starts on 1 Dec 2025 with an empty year. Mid-year jumps to 15 Jul 2026 with an approved plan, finished drills, changes and redos.</span></div><div class="row"><button class="btn sm" onclick="A.reset('fresh')">Start planning</button><button class="btn sm" onclick="A.reset('mid')">Load mid-year</button></div></div>
+ <div class="banner noprint"><div><b>Two starting points.</b> <span class="muted">Planning starts on 1 Dec 2025 with an empty year. Mid-year jumps to 15 Jul 2026 with an approved plan, finished drills, changes and redos.</span></div><div class="row"><button class="btn sm" onclick="A.reset('fresh')">Start planning</button><button class="btn sm" onclick="A.reset('mid')">Load mid-year</button><button class="btn sm" onclick="A.go('guide')">How to use</button></div></div>
  <div class="kpis">
   <div class="tile"><div class="k">Required by rules</div><div class="v">${k.required}</div><div class="h">mandatory drills in ${YEAR}</div></div>
   <div class="tile"><div class="k">Planned vs required</div><div class="v">${pct(k.dated,k.required)}</div><div class="h">${k.dated} have a date · ${k.approved} approved</div></div>
@@ -1029,6 +1029,78 @@ const MODEL=[
  ['Improvement / Signature','UC6','report, text, type, ownerDept, dueDate · report, step, signedBy, signedAt (date and time)',''],
  ['Gap','UC7','id, drill, code, area, text, type, ownerDept, created, dueDate, status, closedAt, escalationLevel, maintenanceRequestNo, datixRef, notes[]','Open → In progress → Closed (EPPU can reopen)'],
  ['EmailLog','all','at, to, subject, body','']];
+const GUIDE=[
+ ['overview','Overview','All roles','Your home page. It shows the plan status, the main numbers and a to-do list for the role you are viewing as.',
+  ['Pick a role in <b>View as</b> at the top. The to-do list changes to that role.','Use <b>Start planning</b> for an empty year (1 Dec 2025) or <b>Load mid-year</b> for half a year of history (15 Jul 2026).','Click a button in the to-do list to jump to the page where the work is.'],
+  'Switch between EPPU admin and OEMC reviewer and compare their to-do lists.'],
+ ['kpi','KPI dashboard','EPPU admin, management','All drill KPIs on one page: plan coverage, drills held on the approved date, scripts on time, staff trained, reports on time and gaps closed.',
+  ['Read the tiles: each shows the value, the target and the case it comes from.','Look at the monthly chart: planned drills against completed drills.','Change the demo date to see the numbers move.'],
+  'Load mid-year: "Held on approved date" is 89%, just under the 90% target.'],
+ ['plan','Annual plan (UC2)','EPPU admin, Proponent','Every mandatory drill of the year, one row each, built from the frequency rules (code, area and period).',
+  ['As <b>EPPU admin</b>, press <b>Generate 2026 slots</b> on Overview to create the 222 drills.','As <b>Proponent</b>, choose your department and set a date for each drill, or press <b>Suggest dates for open slots</b>.','A date outside the required period is refused. Weekends, holidays, Ramadan and clashes show a warning icon.','Click any row to open the drill record: dates, status and full history.'],
+  'Start planning, generate, then set a drill date on a Friday and read the warning.'],
+ ['approvals','Approvals (UC2, UC3)','EPPU admin, OEMC reviewer','Where the plan is submitted and approved area by area, and where change requests wait for a decision.',
+  ['As <b>EPPU admin</b>, press <b>Submit</b> on an area once all its drills have a date.','As <b>OEMC reviewer</b>, press <b>Approve</b>, or <b>Return</b> with a comment.','On approval each planned date becomes the original approved date. It never changes again.'],
+  'Return one area with a comment, then fix and submit it again as EPPU admin.'],
+ ['changes','Change control (UC3)','Proponent, Observer, OEMC reviewer','After approval a date only changes through a change request. This page lists all requests and why they were made.',
+  ['Open an approved drill from Annual plan and press <b>Request change</b>: new date, reason and comment, then <b>Send to OEMC</b>.','As <b>OEMC reviewer</b>, <b>Approve</b> or <b>Reject</b> the request here or on Approvals.','A drill not completed shows <b>Request redo</b>: the redo must be in the same month.'],
+  'Load mid-year: CR-016 (clinical surge) is waiting for OEMC.'],
+ ['moh','MOH / MSMD copy (UC2)','EPPU admin','The approved schedule as a simple table for the Ministry of Health and Aramco MSMD.',
+  ['It opens once the whole plan is approved.','Press <b>Send copy to MOH and MSMD</b>; the email appears in the Email log.','Use <b>Download CSV</b> or <b>Print / save as PDF</b> for the file itself.'],
+  'Approve all areas as OEMC, then send the copy as EPPU admin.'],
+ ['scripts','Drill scripts (UC4)','Proponent, OEMC reviewer','Every drill needs a scenario script. The app asks for it 30 days before the drill; it is due 14 days before.',
+  ['Use the tabs: <b>To write</b>, <b>In review</b>, <b>Approved</b>, <b>Overdue</b>.','As <b>Proponent</b>, open a script and press <b>Start from the … template</b>, edit the story, objectives, roles and events, then <b>Submit to OEMC</b>.','The <b>Automatic check</b> compares the story with each event: age, male / female and location.','As <b>OEMC reviewer</b>, press <b>Approve script</b> or <b>Return with comments</b>.'],
+  'Load mid-year, view as OEMC and open PINK-DH-Q3: the check shows two mismatches about the child.'],
+ ['day','Drill day (UC5)','Observer','The observer’s tablet screen: drills due today, and the next 14 days.',
+  ['Under <b>Due now</b>, press <b>Start</b> on a drill.','Answer every checklist item: <b>Met</b>, <b>Partly</b> or <b>Not met</b>. Set start and end times.','Add participants: scan or type a badge number or name, then <b>Add</b>.','Add findings with a type. Tick “possible gap” to send it to the report.','Finish with <b>Completed</b>, <b>Not completed</b> (starts a redo) or <b>Postponed…</b> (opens a change request).'],
+  'Use <b>Jump to this day</b> on an upcoming drill to move the demo date and record it.'],
+ ['reports','After Action Reports (UC6)','Proponent, Code reviewer, OEMC, DOM approver','A report opens when a drill is completed, filled in from the script and the drill-day record. It is due 14 days after the drill.',
+  ['Use the tabs: <b>To prepare</b>, <b>In signature</b>, <b>Approved</b>, <b>Overdue</b>, <b>Waiting for me</b>.','As <b>Proponent</b>, open the report, write the summary, rate each objective and press <b>Add missing items from drill day</b>.','All 8 continuity checks must be green, then <b>Sign: Prepared</b>.','Switch to <b>Code reviewer</b>, <b>OEMC reviewer</b> and <b>DOM approver</b> in turn and sign. Any of them can <b>Return to proponent</b>.','When the DOM signs, each improvement item becomes a gap.'],
+  'Load mid-year and open BLUE-AH-M06: it is waiting for the code reviewer.'],
+ ['gaps','Gaps (UC7)','Gap owner / CPH, EPPU admin','Every improvement from an approved report, with owner, type and due date, until it is closed.',
+  ['Filter by status, type, owner or escalation level. Click a gap to open it.','As <b>Gap owner / CPH</b>, press <b>Start work</b>, <b>Add note</b>, or <b>Close gap</b> with what was done.','Gaps escalate at 30 days (owner), 60 days (+ department head) and 90 days (+ executives). Overdue gaps go to Datix (mock).','Facility gaps create an SAP maintenance request (mock). <b>Simulate SAP update</b> moves it on.'],
+  'Open G-049 “Radio not transmitting…”: a Facility gap with an SAP request, escalated at 60 days.'],
+ ['master','Master lists (UC19)','EPPU admin','The rules and lists behind the app: frequency rules, colour codes, change reasons, drill roles, hazards, the observer checklist, gap types and settings.',
+  ['Open a tab to read a list.','Frequency rules can be changed only before the plan is generated.','<b>Settings (open points)</b> holds the choices still to confirm with EPPU, such as script lead time.'],
+  'After Start planning, change a frequency rule, then generate and count the drills.'],
+ ['data','Datasphere (sample)','All roles','A read-only view of the data that will come from SAP Datasphere: departments and CPH, areas, the 300 staff and the holiday calendar.',
+  ['Open a tab: <b>Departments and CPH</b>, <b>Areas and facilities</b>, <b>Staff</b>, <b>Holidays calendar</b>.','Search staff by badge, name or job. These are the badges the observer scans.'],
+  'Find who the head (CPH) of a department is.'],
+ ['emails','Email log','All roles','Every email the app would send: requests, approvals, reminders and escalations. In the demo nothing leaves the browser.',
+  ['Newest messages first, with date, recipient and text.'],
+  'Approve a script, then check the email the proponent would get.'],
+ ['about','About this demo','EPPU, SAP team','The business rules (BR-01 to BR-26) and the handover pack for the SAP team: data model, roles and sample data download.',
+  ['Read the rules case by case.','Download the data model and sample data as JSON or CSV.'],
+  'Use this page when you agree the rules with EPPU.']];
+function pGuide(){return`<h1>How to use this demo</h1><p class="sub">The app follows one drill from the yearly plan to closed gaps. Nothing to install and no sign-in. Below: how to start, a 10-minute tour, then each page on its own.</p>
+ <div class="grid2"><div class="card"><h2>Start in one minute</h2><ol class="list">
+ <li><b>View as</b> (top bar): pick the role you want to play. Each role sees its own to-do list and buttons.</li>
+ <li><b>Dept</b> (top bar, for Proponent and Gap owner): pick the department.</li>
+ <li><b>Demo date</b> (top bar): moves time forward, so reminders, escalations and due drills appear.</li>
+ <li><b>Reset</b> (top bar): brings back the sample data. Your changes stay only in this browser.</li>
+ <li>On <b>Overview</b>: <b>Start planning</b> (empty year, 1 Dec 2025) or <b>Load mid-year</b> (15 Jul 2026).</li></ol></div>
+ <div class="card"><h2>The seven roles</h2><div class="tbl"><table><tbody>
+ <tr><td><b>EPPU admin</b></td><td class="wrap">Generates and submits the plan, sends the MOH copy, follows KPIs</td></tr>
+ <tr><td><b>Proponent</b></td><td class="wrap">Department head: picks dates, writes scripts, prepares reports</td></tr>
+ <tr><td><b>OEMC reviewer</b></td><td class="wrap">Approves the plan, change requests and scripts; concurs on reports</td></tr>
+ <tr><td><b>Observer</b></td><td class="wrap">Records the drill on drill day</td></tr>
+ <tr><td><b>Code reviewer (AAR)</b></td><td class="wrap">Reviews the report for the drill’s colour code</td></tr>
+ <tr><td><b>DOM approver</b></td><td class="wrap">Gives the final report approval</td></tr>
+ <tr><td><b>Gap owner / CPH</b></td><td class="wrap">Works and closes the gaps of a department</td></tr></tbody></table></div></div></div>
+ <div class="card"><h2>A 10-minute tour</h2><ol class="list">
+ <li><b>Plan</b> (2 min): Start planning, view as EPPU admin, Generate 2026 slots, Suggest dates, open Annual plan.</li>
+ <li><b>Approve</b> (1 min): Approvals, Submit an area; view as OEMC reviewer and Approve.</li>
+ <li><b>Mid-year</b> (1 min): Load mid-year and read the Overview numbers and to-do list.</li>
+ <li><b>Change</b> (1 min): Change control, view as OEMC reviewer, approve CR-016.</li>
+ <li><b>Script</b> (1 min): Drill scripts, open PINK-DH-Q3 and read the automatic check.</li>
+ <li><b>Drill day</b> (2 min): view as Observer, Drill day, Start, answer the checklist, add a badge, Completed.</li>
+ <li><b>Report</b> (1 min): After Action Reports, open BLUE-AH-M06 and sign as Code reviewer.</li>
+ <li><b>Gaps</b> (1 min): Gaps, open G-049, then the KPI dashboard.</li></ol></div>
+ <div class="card"><h2>Page by page</h2><div class="pills">${GUIDE.map(([k,t])=>`<button class="pill" style="cursor:pointer;border:0;padding-right:12px" onclick="document.getElementById('g-${k}').scrollIntoView({behavior:'smooth'})">${t}</button>`).join('')}</div></div>
+ ${GUIDE.map(([k,t,who,what,steps,tip])=>`<div class="card" id="g-${k}"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${t}</h2><button class="btn sm" onclick="A.go('${k}')">Open this page</button></div>
+ <p style="margin:10px 0 6px"><span class="chip c-grey">Who</span> ${who}</p><p style="margin:6px 0">${what}</p>
+ <div class="sec">How to use it</div><ol class="list">${steps.map(x=>`<li>${x}</li>`).join('')}</ol>
+ <div class="note" style="margin:12px 0 0"><b>Try this:</b> ${tip}</div></div>`).join('')}`}
 function pAbout(){return`<h1>About this demo</h1><p class="sub">The complete drill lifecycle app, cases 2 to 7: the annual schedule (UC2), change control (UC3), master lists (UC19), the drill script (UC4), drill day (UC5), the After Action Report (UC6) and gaps (UC7), plus a KPI dashboard and the handover pack for SAP at the bottom of this page.</p>
  <div class="card"><h2>Step 3 walkthrough</h2><ol class="list">
  <li>Press <b>Load mid-year</b> on Overview (demo date 15 Jul 2026), then open the <b>KPI dashboard</b>.</li>
@@ -1151,9 +1223,9 @@ function liveCheck(id,mode){const v=val('m-to'),el=document.getElementById('m-ch
 
 /* ---------- Shell ---------- */
 const PAGES=[['Work',[['overview','Overview'],['kpi','KPI dashboard'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy'],['scripts','Drill scripts'],['day','Drill day'],['reports','After Action Reports'],['gaps','Gaps']]],
- ['Data',[['master','Master lists'],['data','Datasphere (sample)'],['emails','Email log']]],['Help',[['about','About this demo']]]];
+ ['Data',[['master','Master lists'],['data','Datasphere (sample)'],['emails','Email log']]],['Help',[['guide','How to use'],['about','About this demo']]]];
 function render(){const n=counts();const props=[...new Set(S.drills.length?S.drills.map(d=>d.dept):CODES.flatMap(c=>AREAS.map(a=>proponentFor(c.id,a.id))))];
- const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,reports:pReports,aar:pAAR,gaps:pGaps,kpi:pKPI,master:pMaster,data:pData,emails:pEmails,about:pAbout}[UI.page]();
+ const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,reports:pReports,aar:pAAR,gaps:pGaps,kpi:pKPI,master:pMaster,data:pData,emails:pEmails,about:pAbout,guide:pGuide}[UI.page]();
  document.getElementById('app').innerHTML=`<header class="shell"><div class="brand"><span class="mark">DR</span>EPPU Drill Manager</div><span class="demo-tag">Demo · sample data</span><span class="sp"></span>
  <label>View as <select onchange="A.setRole(this.value)">${Object.entries(ROLE_NAMES).map(([k,l])=>`<option value="${k}" ${S.role===k?'selected':''}>${l}</option>`).join('')}</select></label>
  ${S.role==='proponent'||S.role==='owner'?`<label>Dept <select onchange="A.setDept(this.value)">${DEPTS.filter(d=>S.role==='owner'?(!S.gaps.length||S.gaps.some(g=>g.owner===d.id)):props.includes(d.id)).map(d=>`<option value="${d.id}" ${S.dept===d.id?'selected':''}>${esc(d.name)}${S.role==='owner'?` (${S.gaps.filter(g=>g.owner===d.id&&g.status!=='Closed').length} open)`:''}</option>`).join('')}</select></label>`:''}
