@@ -119,7 +119,7 @@ td input[type=date]{padding:3px 6px}
 
 /* ---- SAP command-center look ---- */
 .shell{background:linear-gradient(90deg,#001A4E 0%,#003399 60%,#0057D9 100%);box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.brand .sap{display:block;height:26px;width:auto}
+.brand .sap{display:block;height:28px;width:56px;object-fit:contain;flex-shrink:0}
 .brand .sep{width:1px;height:22px;background:rgba(255,255,255,.35)}
 .demo-tag{background:rgba(232,161,0,.18);color:#FFD36B;letter-spacing:.04em}
 .shell select,.shell input{background:rgba(0,26,78,.55);border-color:rgba(184,212,255,.4)}
@@ -130,7 +130,6 @@ nav button:hover{background:rgba(255,255,255,.08);color:#fff}
 nav button.on{background:linear-gradient(90deg,rgba(0,86,217,.45),rgba(0,86,217,.1));color:#fff;border-left-color:var(--gold);font-weight:700}
 nav .grp{color:rgba(255,255,255,.38);font-weight:700;letter-spacing:.12em;font-size:10.5px}
 main h1{color:var(--navy)}
-main>h1:first-child,main>div>h1:first-child{border-bottom:2px solid var(--gold);padding-bottom:8px;display:inline-block}
 .card,.tbl,.tile{border-color:var(--line);box-shadow:0 1px 4px rgba(0,26,78,.07)}
 .tile{border-top:3px solid var(--blue)}
 .tile.good{border-top-color:var(--ok)}.tile.bad{border-top-color:var(--err)}
@@ -142,6 +141,29 @@ th{background:#F2F6FF;color:var(--s,#003399);font-weight:700;font-size:11px}
 .banner{border-color:#89B4F5;background:#F7FAFF}
 .tabs button.on{color:var(--blue);border-color:var(--gold)}
 .toast{background:linear-gradient(90deg,#001A4E,#003399);border-bottom:2px solid var(--gold)}
+/* ---- exact template details ---- */
+.shell{min-height:52px;padding:8px 20px}
+.brand{font-size:14px}
+.layout{grid-template-columns:250px minmax(0,1fr)}
+nav button{font-size:12.5px}
+main{padding:0 26px 60px}
+.sc-head{background:linear-gradient(135deg,#001A4E 0%,#003399 100%);border-bottom:2px solid var(--gold);margin:0 -26px 20px;padding:18px 26px;position:sticky;top:52px;z-index:10}
+.sc-head h1{color:#fff;font-size:18px;margin:0}
+.sc-head .sub{color:rgba(255,255,255,.72);margin:2px 0 0;font-size:13px}
+.sc-head .sub b,.sc-head .sub a{color:#fff}
+.sc-head .sub .chip{background:rgba(255,255,255,.15);color:#fff}
+main>.sc-pad{height:20px}
+thead th,th{background:linear-gradient(90deg,#001A4E,#003399);color:#fff;font-weight:700;font-size:11px;letter-spacing:.3px;border-bottom:2px solid #0057D9;text-transform:none;font-family:var(--font)}
+tbody tr:hover{background:var(--bg)}
+.tile{border-radius:10px;border-top-width:4px;box-shadow:0 2px 12px rgba(0,51,153,.1);border-left:0;border-right:0;border-bottom:0}
+.tile .v{font-weight:300;color:var(--blue)}
+.tile .k{font-weight:700;font-size:10.5px;color:var(--muted)}
+.card{border-radius:8px;border:0;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.chip{border-radius:12px;font:700 10.5px/1.9 var(--font);padding:0 9px}
+.c-ok{background:#E8F5E9;color:#1B5E20}.c-warn{background:#FFF8E1;color:#7A5300}.c-err{background:#FFEBEE;color:#8B0000}
+.c-info{background:#E3F2FD;color:#0D47A1}.c-pur{background:#F3E5F5;color:#4A148C}.c-grey{background:#E4ECFF;color:#1A2B52}
+.badge{background:#CC0000}
+@media (max-width:860px){.layout{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start}nav{align-self:start}main{padding:0 14px 60px}.sc-head{margin:0 -14px 16px;padding:14px;position:static}}
 @media (max-width:860px){nav{padding:6px}nav button{border-left:0;border-bottom:3px solid transparent}nav button.on{border-bottom-color:var(--gold)}}
 </style>
 </head>
@@ -1234,16 +1256,19 @@ function liveCheck(id,mode){const v=val('m-to'),el=document.getElementById('m-ch
 /* ---------- Shell ---------- */
 const PAGES=[['Work',[['overview','Overview'],['kpi','KPI dashboard'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy'],['scripts','Drill scripts'],['day','Drill day'],['reports','After Action Reports'],['gaps','Gaps']]],
  ['Data',[['master','Master lists'],['emails','Email log']]],['Help',[['guide','How to use'],['about','About this demo']]]];
+function scHead(){const m=document.querySelector('main');if(!m)return;const h=m.querySelector(':scope>h1');if(!h)return;
+ const b=document.createElement('div');b.className='sc-head';m.insertBefore(b,h);b.appendChild(h);
+ const n=b.nextElementSibling;if(n&&n.matches('p.sub'))b.appendChild(n)}
 function render(){const n=counts();const props=[...new Set(S.drills.length?S.drills.map(d=>d.dept):CODES.flatMap(c=>AREAS.map(a=>proponentFor(c.id,a.id))))];
  if(UI.page==='data')UI.page='overview';
  const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,reports:pReports,aar:pAAR,gaps:pGaps,kpi:pKPI,master:pMaster,emails:pEmails,about:pAbout,guide:pGuide}[UI.page]();
- document.getElementById('app').innerHTML=`<header class="shell"><div class="brand"><svg class="sap" viewBox="0 0 92 45.4" role="img" aria-label="SAP"><defs><linearGradient id="sapg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00B8F1"/><stop offset=".22" stop-color="#06A5E5"/><stop offset=".79" stop-color="#1870C5"/><stop offset="1" stop-color="#1D61BC"/></linearGradient></defs><path d="M0 45.4h46.4L91.8 0H0z" fill="url(#sapg)"/><text x="7" y="32" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="24" fill="#fff" letter-spacing="-.5">SAP</text></svg><span class="sep"></span>EPPU Drill Manager</div><span class="demo-tag">Demo · sample data</span><span class="sp"></span>
+ document.getElementById('app').innerHTML=`<header class="shell"><div class="brand"><img class="sap" src="sap-logo.png" alt="SAP"><span class="sep"></span>EPPU Drill Manager</div><span class="demo-tag">Demo · sample data</span><span class="sp"></span>
  <label>View as <select onchange="A.setRole(this.value)">${Object.entries(ROLE_NAMES).map(([k,l])=>`<option value="${k}" ${S.role===k?'selected':''}>${l}</option>`).join('')}</select></label>
  ${S.role==='proponent'||S.role==='owner'?`<label>Dept <select onchange="A.setDept(this.value)">${DEPTS.filter(d=>S.role==='owner'?(!S.gaps.length||S.gaps.some(g=>g.owner===d.id)):props.includes(d.id)).map(d=>`<option value="${d.id}" ${S.dept===d.id?'selected':''}>${esc(d.name)}${S.role==='owner'?` (${S.gaps.filter(g=>g.owner===d.id&&g.status!=='Closed').length} open)`:''}</option>`).join('')}</select></label>`:''}
  <label>Demo date <input type="date" value="${S.demoDate}" onchange="A.setDate0(this.value)"></label>
  <button class="btn sm" onclick="A.reset(S.demoDate>'2026-01-01'?'mid':'fresh')" title="Restore the sample data in this browser">Reset</button></header>
  <div class="layout"><nav>${PAGES.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([k,l])=>`<button class="${UI.page===k?'on':''}" onclick="A.go('${k}')"><span>${l}</span>${(b=>b?`<span class="badge">${b}</span>`:'')({approvals:n.appr,scripts:n.scripts,day:n.day,reports:n.reports,gaps:n.gaps}[k])}</button>`).join('')).join('')}</nav>
- <main>${page}</main></div>${drawer()}${gapDrawer()}${modal()}`;
+ <main>${page}</main></div>${drawer()}${gapDrawer()}${modal()}`;scHead();
  renderTable()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(UI.drawer||UI.modal||UI.gap))A.close()});
 render();
