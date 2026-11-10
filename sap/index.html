@@ -1,0 +1,1252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EPPU Drill Manager · SAP edition</title>
+<style>
+:root{--navy:#001A4E;--blue:#0057D9;--cyan:#0096D6;--purple:#003399;--gold:#E8A100;--glow:#B8D4FF;--ice:#B8D4FF;--bg:#EEF3FF;--surface:#fff;--ink:#0A1428;--muted:#6B82B0;--line:#C8D8FF;
+--ok:#188918;--okbg:#E5F5E5;--warn:#E76500;--warnbg:#FFF0E0;--err:#CC0000;--errbg:#FFEBEB;--info:#0057D9;--infobg:#E4ECFF;--pur:#003399;--purbg:#E4ECFF;--grey:#1A2B52;--greybg:#E4ECFF;
+--font:Arial,'Helvetica Neue',Helvetica,sans-serif;--mono:Arial,'Helvetica Neue',Helvetica,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--blue)}
+.shell{background:var(--navy);color:#fff;display:flex;align-items:center;gap:16px;padding:10px 20px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;white-space:nowrap}
+.brand .mark{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;font:700 13px var(--mono)}
+.demo-tag{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;background:rgba(29,200,223,.18);color:var(--cyan);padding:5px 8px;border-radius:4px;white-space:nowrap}
+.shell .sp{flex:1}
+.shell label{font-size:12px;color:#B9C6DA;display:flex;align-items:center;gap:6px}
+.shell select,.shell input{background:#0E2552;border:1px solid #29427A;color:#fff;border-radius:6px;padding:5px 8px;font-size:13.5px}
+.shell .btn{background:transparent;border-color:#3A5491;color:#fff}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 54px)}
+nav{background:var(--surface);border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+nav button{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:6px;color:var(--muted);font-weight:500}
+nav button:hover{background:var(--bg);color:var(--ink)}
+nav button.on{background:var(--infobg);color:var(--info);font-weight:600}
+nav .grp{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#8C97AD;padding:14px 12px 6px}
+.badge{background:var(--err);color:#fff;border-radius:10px;font:600 11px/1 var(--mono);padding:3px 7px}
+main{padding:24px 28px 60px;min-width:0}
+h1{font-size:24px;line-height:1.25;margin:0 0 4px}
+h2{font-size:17px;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 20px;max-width:80ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:18px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.btn{cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 14px;font-weight:600;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:#1F55C2}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.danger{color:var(--err);border-color:#E9B9B9}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.tile .k{font:500 11.5px/1.3 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-size:28px;font-weight:700;line-height:1.2;margin-top:6px}
+.tile .h{font-size:13px;color:var(--muted)}
+.tile.good .v{color:var(--ok)} .tile.bad .v{color:var(--err)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+td.wrap,th.wrap{white-space:normal}
+th{font:600 11.5px/1.4 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:#F8FAFC;position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer} tbody tr.click:hover{background:#F6F9FE}
+.chip{display:inline-block;font:500 12px/1.7 var(--mono);padding:0 8px;border-radius:4px;white-space:nowrap}
+.c-grey{background:var(--greybg);color:var(--grey)}.c-info{background:var(--infobg);color:var(--info)}.c-pur{background:var(--purbg);color:var(--pur)}
+.c-ok{background:var(--okbg);color:var(--ok)}.c-warn{background:var(--warnbg);color:var(--warn)}.c-err{background:var(--errbg);color:var(--err)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px;border:1px solid rgba(0,0,0,.15)}
+.mono{font-family:var(--mono);font-size:13px}
+.muted{color:var(--muted)}
+.w{color:var(--warn);font-weight:600}.e{color:var(--err);font-weight:600}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters select,.filters input,.field input,.field select,.field textarea,td input[type=date],td select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff;font-size:14px}
+td input[type=date]{padding:3px 6px}
+.note{border-left:3px solid var(--cyan);background:#F0FBFD;padding:10px 14px;border-radius:0 6px 6px 0;color:#1E4E5C;margin-bottom:16px;max-width:90ch}
+.banner{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px dashed #9DB3D6;border-radius:8px;padding:12px 16px;margin-bottom:18px}
+.todo{display:grid;gap:8px}
+.todo .it{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:6px}
+.list{margin:0;padding-left:18px}.list li{margin:3px 0}
+.heat td{text-align:center;padding:6px 4px;font:500 12.5px var(--mono)}
+.heat td:first-child{text-align:left;padding-left:12px}
+.overlay{position:fixed;inset:0;background:rgba(0,18,59,.35);z-index:40;display:flex;justify-content:flex-end}
+.drawer{background:var(--surface);width:min(560px,100%);height:100%;overflow:auto;padding:22px 24px;box-shadow:-8px 0 30px rgba(0,0,0,.15)}
+.modalwrap{position:fixed;inset:0;background:rgba(0,18,59,.4);z-index:50;display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);border-radius:10px;width:min(520px,100%);max-height:90vh;overflow:auto;padding:22px 24px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:14px;margin:14px 0}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.field{display:grid;gap:4px;margin:12px 0}
+.field label{font-size:13px;font-weight:600}
+.field textarea{min-height:70px}
+.hist{border-left:2px solid var(--line);margin:8px 0 0 4px;padding-left:14px;display:grid;gap:8px;font-size:13.5px}
+.hist .at{font:12px var(--mono);color:var(--muted)}
+.msgs{display:grid;gap:4px;margin:8px 0}
+.msgs div{font-size:13.5px;padding:6px 10px;border-radius:5px}
+.msgs .e{background:var(--errbg)}.msgs .w{background:var(--warnbg)}.msgs .ok{background:var(--okbg);color:var(--ok)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+.tabs button{all:unset;cursor:pointer;padding:8px 14px;color:var(--muted);font-weight:600;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--blue);border-color:var(--blue)}
+.email{border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-bottom:8px;background:#fff}
+.email .meta{font:12px var(--mono);color:var(--muted)}
+.sec{font:600 12px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 4px}
+.ci{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.ct{flex:1;min-width:220px;font-weight:500}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{padding:10px 14px;border:0;border-right:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:14px;min-width:64px}
+.seg button:last-child{border-right:0}
+.seg .on-Met{background:var(--okbg);color:var(--ok)}.seg .on-Partly{background:var(--warnbg);color:var(--warn)}.seg .on-Notmet{background:var(--errbg);color:var(--err)}.seg .on-NA{background:var(--greybg);color:var(--grey)}
+.big{font-size:15px!important;padding:9px 10px!important;border:1px solid var(--line);border-radius:6px;background:#fff}
+.btn.big{padding:12px 20px;font-size:15px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{background:var(--infobg);color:var(--info);border-radius:14px;padding:4px 6px 4px 12px;font-size:13.5px;display:inline-flex;gap:6px;align-items:center}
+.pill button{all:unset;cursor:pointer;padding:0 6px;color:var(--muted)}
+.bar{display:grid;grid-template-columns:minmax(110px,190px) 1fr auto;gap:10px;align-items:center;margin:5px 0;font-size:13.5px}
+.bt{background:var(--bg);border-radius:3px;height:12px;overflow:hidden}.bt div{height:100%;border-radius:3px}.bn{font:500 12.5px var(--mono);white-space:nowrap}
+.sigs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sig{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;border-top:4px solid var(--line)}
+.sig .k{font:600 11.5px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+.sig.done{border-top-color:var(--ok)}.sig.next{border-top-color:var(--warn);background:#FFFBF2}
+.cols{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;height:180px;align-items:end}
+.col{display:flex;flex-direction:column;align-items:center;height:100%}.cb{flex:1;width:100%;display:flex;gap:2px;align-items:flex-end;justify-content:center}
+.c1,.c2{width:40%;border-radius:3px 3px 0 0;min-height:1px}.c1{background:var(--ice)}.c2{background:var(--blue)}.cl{font:12px var(--mono);color:var(--muted);margin-top:4px}
+@media (max-width:860px){.sigs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){.layout{grid-template-columns:1fr}nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}nav .grp{display:none}nav button{white-space:nowrap}main{padding:18px 16px 60px}.grid2{grid-template-columns:1fr}.kv{grid-template-columns:120px 1fr}}
+@media print{.shell,nav,.noprint{display:none!important}.layout{display:block}main{padding:0}.card,.tbl{border:0}}
+
+/* ---- SAP command-center look ---- */
+.shell{background:linear-gradient(90deg,#001A4E 0%,#003399 60%,#0057D9 100%);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.brand .sap{display:block;height:26px;width:auto}
+.brand .sep{width:1px;height:22px;background:rgba(255,255,255,.35)}
+.demo-tag{background:rgba(232,161,0,.18);color:#FFD36B;letter-spacing:.04em}
+.shell select,.shell input{background:rgba(0,26,78,.55);border-color:rgba(184,212,255,.4)}
+.shell .btn{border-color:rgba(184,212,255,.5)}
+nav{background:linear-gradient(180deg,#001A4E 0%,#002266 100%);border-right:0;padding:10px 0}
+nav button{color:rgba(255,255,255,.72);border-radius:0;border-left:3px solid transparent;padding:9px 14px;font-size:13.5px}
+nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+nav button.on{background:linear-gradient(90deg,rgba(0,86,217,.45),rgba(0,86,217,.1));color:#fff;border-left-color:var(--gold);font-weight:700}
+nav .grp{color:rgba(255,255,255,.38);font-weight:700;letter-spacing:.12em;font-size:10.5px}
+main h1{color:var(--navy)}
+main>h1:first-child,main>div>h1:first-child{border-bottom:2px solid var(--gold);padding-bottom:8px;display:inline-block}
+.card,.tbl,.tile{border-color:var(--line);box-shadow:0 1px 4px rgba(0,26,78,.07)}
+.tile{border-top:3px solid var(--blue)}
+.tile.good{border-top-color:var(--ok)}.tile.bad{border-top-color:var(--err)}
+th{background:#F2F6FF;color:var(--s,#003399);font-weight:700;font-size:11px}
+.btn.primary{background:linear-gradient(135deg,#0057D9,#003399);border-color:#003399;box-shadow:0 2px 8px rgba(0,51,153,.25)}
+.btn.primary:hover{background:linear-gradient(135deg,#0057D9,#001A4E)}
+.btn:hover{border-color:var(--blue)}
+.note{border-left-color:var(--gold);background:#FFF8E6;color:#4A3500}
+.banner{border-color:#89B4F5;background:#F7FAFF}
+.tabs button.on{color:var(--blue);border-color:var(--gold)}
+.toast{background:linear-gradient(90deg,#001A4E,#003399);border-bottom:2px solid var(--gold)}
+@media (max-width:860px){nav{padding:6px}nav button{border-left:0;border-bottom:3px solid transparent}nav button.on{border-bottom-color:var(--gold)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ===================================================================
+   EPPU Drill Manager - demo, Step 1 (UC2 annual schedule, UC3 change
+   control, UC19 master lists). All data is fictional sample data.
+   State lives in this browser (localStorage); "Reset" restores it.
+   =================================================================== */
+const KEY='eppu-drill-demo-sap-v1', YEAR=2026;
+
+/* ---------- Sample master data (read-only) ---------- */
+const AREAS=[
+ {id:'DH',name:'Dhahran',facility:'Main hospital',type:'Inpatient + ER'},
+ {id:'AH',name:'Al-Hasa',facility:'Al-Hasa health center',type:'Inpatient + ER'},
+ {id:'RT',name:'Ras Tanura',facility:'Ras Tanura health center',type:'Outpatient + ER'},
+ {id:'UD',name:'Udhailiyah',facility:'Udhailiyah clinic',type:'Outpatient'},
+ {id:'AB',name:'Abqaiq',facility:'Abqaiq clinic',type:'Outpatient'},
+ {id:'RAC',name:'RAC',facility:'Ambulatory care clinics',type:'Outpatient'}];
+const CODES=[
+ {id:'RED',name:'Code Red',meaning:'Fire',color:'#D7263D',reviewer:'Safety & Fire Protection'},
+ {id:'BLUE',name:'Code Blue',meaning:'Cardiac arrest / medical emergency',color:'#2A66DD',reviewer:'Resuscitation committee'},
+ {id:'PINK',name:'Code Pink',meaning:'Infant or child abduction',color:'#EE6FA8',reviewer:'Security Services'},
+ {id:'BROWN',name:'Code Brown',meaning:'Hazardous material spill',color:'#8B5A2B',reviewer:'Environmental Services'},
+ {id:'ORANGE',name:'Code Orange',meaning:'Mass casualty / external disaster',color:'#F28C28',reviewer:'Emergency Department'},
+ {id:'YELLOW',name:'Code Yellow',meaning:'Bomb threat',color:'#E8C547',reviewer:'Security Services'},
+ {id:'GREY',name:'Code Grey',meaning:'Aggressive or violent person',color:'#9AA3B2',reviewer:'Security Services'},
+ {id:'SILVER',name:'Code Silver',meaning:'Person with a weapon',color:'#C9D1DA',reviewer:'Security Services'},
+ {id:'GREEN',name:'Code Green',meaning:'Evacuation',color:'#2E9E5B',reviewer:'Facilities Engineering'},
+ {id:'IT',name:'Utility / IT failure',meaning:'IT downtime, power, water or medical gas failure',color:'#753BBD',reviewer:'Facilities Engineering'}];
+const FREQ={M:'Monthly',Q:'Quarterly',Q3:'Quarterly, each shift',H:'Twice a year',Y:'Yearly','-':'Not required'};
+/* Rows = code, columns = area (DH, AH, RT, UD, AB, RAC). Blue/Brown monthly, Pink quarterly, IT yearly come
+   from the 21 Oct session; the rest are sample values to confirm with EPPU. */
+const DEFAULT_FREQ={
+ RED:{DH:'Q3',AH:'Q',RT:'Q',UD:'Q',AB:'Q',RAC:'Q'},
+ BLUE:{DH:'M',AH:'M',RT:'M',UD:'M',AB:'M',RAC:'M'},
+ PINK:{DH:'Q',AH:'Q',RT:'-',UD:'-',AB:'-',RAC:'-'},
+ BROWN:{DH:'M',AH:'M',RT:'M',UD:'M',AB:'M',RAC:'M'},
+ ORANGE:{DH:'H',AH:'H',RT:'H',UD:'H',AB:'H',RAC:'H'},
+ YELLOW:{DH:'Y',AH:'Y',RT:'Y',UD:'Y',AB:'Y',RAC:'Y'},
+ GREY:{DH:'H',AH:'H',RT:'H',UD:'-',AB:'-',RAC:'-'},
+ SILVER:{DH:'Y',AH:'Y',RT:'-',UD:'-',AB:'-',RAC:'-'},
+ GREEN:{DH:'Y',AH:'Y',RT:'Y',UD:'Y',AB:'Y',RAC:'Y'},
+ IT:{DH:'Y',AH:'Y',RT:'Y',UD:'Y',AB:'Y',RAC:'Y'}};
+const DEPTS=[
+ ['ED','Emergency Department','DH','Dr. Khalid Al-Harbi'],['ICU','Critical Care','DH','Dr. Maryam Al-Dossary'],
+ ['MAT',"Maternity & Women's Health",'DH','Dr. Noura Al-Shehri'],['PED','Pediatrics','DH','Dr. Saeed Al-Zahrani'],
+ ['MSN','Medical-Surgical Nursing','DH','Reem Al-Otaibi'],['OR','Perioperative Services','DH','Dr. Tariq Al-Anazi'],
+ ['LAB','Laboratory','DH','Dr. Hessa Al-Mansour'],['RAD','Radiology','DH','Dr. Omar Al-Qahtani'],
+ ['PHA','Pharmacy','DH','Abdullah Al-Rashed'],['RES','Respiratory Therapy','DH','Lina Haddad'],
+ ['SEC','Security Services','DH','Majed Al-Subaie'],['FAC','Facilities Engineering','DH','Eng. Fahad Al-Shammari'],
+ ['BME','Biomedical Engineering','DH','Eng. Sara Al-Mutlaq'],['ITS','IT Services','DH','Yousef Al-Khaldi'],
+ ['SFP','Safety & Fire Protection','DH','Hamad Al-Dawsari'],['EVS','Environmental Services','DH','Grace Mendoza'],
+ ['AHN','Al-Hasa Nursing','AH','Amal Al-Naim'],['AHE','Al-Hasa Emergency','AH','Dr. Waleed Al-Mulhim'],
+ ['AHF','Al-Hasa Facilities','AH','Eng. Ibrahim Al-Afaleq'],['RTH','Ras Tanura Health Center','RT','Dr. Huda Al-Ali'],
+ ['RTF','Ras Tanura Facilities','RT','Eng. Nasser Al-Hajri'],['UDC','Udhailiyah Clinic','UD','Dr. Samir Khoury'],
+ ['ABC','Abqaiq Clinic','AB','Dr. Latifa Al-Yami'],['RAC','Ambulatory Care Network','RAC','Dr. Ahmed Bukhari'],
+ ['RAS','Ambulatory Support Services','RAC','Rana Al-Saleh']].map(([id,name,area,head])=>({id,name,area,head}));
+const LOCAL={AH:'AHN',RT:'RTH',UD:'UDC',AB:'ABC',RAC:'RAC'};
+const CODE_PROP={RED:{DH:'SFP',AH:'AHF',RT:'RTF',RAC:'RAS'},BLUE:{DH:'RES',AH:'AHE'},PINK:{DH:'MAT',AH:'AHN'},
+ BROWN:{DH:'EVS',AH:'AHF',RT:'RTF'},ORANGE:{DH:'ED',AH:'AHE'},YELLOW:{DH:'SEC',AH:'AHE'},GREY:{DH:'SEC',AH:'AHN'},
+ SILVER:{DH:'SEC',AH:'AHE'},GREEN:{DH:'FAC',AH:'AHF'},IT:{DH:'ITS',AH:'ITS',RT:'ITS',UD:'ITS',AB:'ITS',RAC:'ITS'}};
+const proponentFor=(c,a)=>(CODE_PROP[c]&&CODE_PROP[c][a])||LOCAL[a]||'SFP';
+const REASONS=['Clinical surge / high census','Staff shortage','Clash with another event or audit','Facility or equipment not available','Request from department head','Weather','Drill not completed - redo','Other'];
+/* ---------- Step 2 lists: scripts (UC4) and drill day (UC5) ---------- */
+const LOCS={DH:['Ward 3B','Ward 4A','Pod C','Building 61'],AH:['Ward 2A','Ward 1C'],RT:['Wing A'],UD:['Wing B'],AB:['Wing A'],RAC:['Building 7']};
+const HVA=['Power outage','Mass casualty incident','Internal fire','IT system failure','Medical gas failure','Hazardous material spill','Infant or child abduction','Violent person','Sandstorm / severe weather','Bomb threat'];
+const ROLES=['Incident commander','Drill controller','Evaluator / observer','Simulator (actor)','Unit charge nurse','Responding team','Security officer','Facilities technician','Switchboard','Safety officer'];
+const GAP_TYPES=['Staff / training','Communication','Equipment','Facility','Policy / procedure','IT system','Supplies','Security'];
+const CHK_GENERIC=[['Activation',['Code called correctly and promptly','Page / notification heard in all affected areas']],
+ ['Communication',['Incident commander identified, roles clear','Radio and phone communication worked']],
+ ['Safety',['Patients and staff kept safe during the drill','Exits and corridors kept clear']],
+ ['Wrap-up',['All clear announced','Hot debrief held with participants']]];
+const CHK_CODE={RED:['RACE followed','Correct extinguisher used (PASS)','Fire doors closed'],BLUE:['CPR started within 1 minute','Defibrillator applied within 3 minutes','Code team arrived within 5 minutes'],
+ PINK:['Exits locked down within 5 minutes','Description of the child shared to all posts','CCTV reviewed'],BROWN:['Area isolated','Spill kit used correctly','Safety data sheet checked'],
+ ORANGE:['Triage area set up','Triage tags used','Extra staff called in'],YELLOW:['Bomb threat checklist completed by call taker','Search done with radios off near the item','Police notified'],
+ GREY:['Security arrived within 5 minutes','De-escalation attempted','Others moved to safety'],SILVER:['Run-hide-fight message announced','Affected zone locked down','Police notified'],
+ GREEN:['Evacuation route used','Headcount at assembly point','Patients moved with their records'],IT:['Downtime / backup procedure started','Backup supply or paper forms available','Facilities and IT notified']};
+/* ---------- Step 3 lists: After Action Report (UC6) and gaps (UC7) ---------- */
+const GAP_DAYS={'Staff / training':60,'Communication':30,'Equipment':45,'Facility':90,'Policy / procedure':60,'IT system':45,'Supplies':30,'Security':30};
+const AAR_STEPS=[['Prepared','Prepared','proponent'],['Reviewed','Reviewed by code reviewer','reviewer'],['Concurred','OEMC concurs','oemc'],['Approved','DOM approves','dom']];
+const RATINGS=['Met','Partly met','Not met'];
+const ESC=['—','30 days: owner reminded','60 days: + department head (CPH)','90 days: + executives'];
+const LEGACY_GAPS=[['Fire extinguisher in corridor past inspection date','Equipment'],['Overhead page not heard in the staff lounge','Communication'],['New staff unsure of evacuation route','Staff / training'],
+ ['Fire door held open by a wedge','Facility'],['Spill kit missing goggles','Supplies'],['Downtime forms out of date','Policy / procedure'],['CCTV camera at east exit not recording','Security'],
+ ['Code team pager list not updated after rota change','Communication'],['Crash cart checklist not signed for 3 days','Equipment'],['Assembly point sign faded','Facility'],
+ ['Backup oxygen cylinders stored without a chain','Facility'],['Switchboard script for bomb threats missing questions','Policy / procedure'],['Night shift not trained on Code Pink lockdown','Staff / training'],
+ ['Two-way radios with flat batteries','Equipment'],['EHR downtime printer had no paper','Supplies'],['Badge access left open on stairwell door','Security']];
+function checklist(c){const l=[...CHK_GENERIC.slice(0,1),['Response',CHK_CODE[c]],...CHK_GENERIC.slice(1)];let n=0;return l.map(([sec,items])=>({sec,items:items.map(t=>({k:'i'+(++n),t}))}))}
+/* Scenario templates (HSEEP-style story + event list), filled per drill */
+function tpl(d){const h=hash(d.id),L=LOCS[d.area],loc=L[h%L.length],age=3+h%7,kid=['girl','boy'][h%2],adult=['man','woman'][h%2],aage=38+h%30,sh=d.shift?d.shift.toLowerCase()+' shift':'day shift',
+ E=(t,event,expected,role)=>({t,event,expected,role});
+ const T={
+ RED:{hva:'Internal fire',story:`Smoke is reported from a linen cart in the corridor of ${loc} during the ${sh}. A nurse sees it and pulls the fire alarm.`,obj:['Staff follow RACE within 2 minutes','Fire doors closed and corridor cleared','Horizontal evacuation of 4 patients'],
+  ev:[E(0,`Simulator places a smoke card on the linen cart in ${loc}`,'Nurse raises the alarm and calls the switchboard','Simulator (actor)'),E(1,`Switchboard pages Code Red ${loc}`,'Staff apply RACE and close doors','Switchboard'),E(3,'Fire team arrives','Assess and use the extinguisher (PASS)','Responding team'),E(6,'Controller: smoke spreads to the next room','Move 4 patients to the next compartment','Unit charge nurse'),E(9,'Visitors try to enter the corridor','Security keeps the area closed','Security officer'),E(14,'Fire reported out','All clear paged and headcount done','Incident commander')]},
+ BLUE:{hva:'Mass casualty incident',story:`A ${aage}-year-old ${adult} visiting ${loc} collapses in the waiting area and is unresponsive with no pulse.`,obj:['CPR within 1 minute','Defibrillator within 3 minutes','Handover to the code team'],
+  ev:[E(0,`Simulator: the ${adult} collapses in the waiting area of ${loc}`,'Staff check response and call Code Blue','Simulator (actor)'),E(1,'Code Blue paged','CPR started, crash cart brought','Unit charge nurse'),E(3,'Code team arrives','Team leader takes over','Responding team'),E(4,'Monitor shows a shockable rhythm','Shock given, CPR resumed','Responding team'),E(10,'Pulse returns (simulated)','Transfer to ED arranged','Incident commander'),E(15,'End of drill','Hot debrief','Drill controller')]},
+ PINK:{hva:'Infant or child abduction',story:`A mother reports that her ${age}-year-old ${kid} is missing from ${loc} at 10:15. The ${kid} was last seen near the play corner.`,obj:['Exits locked within 5 minutes','Description shared to all posts','Child found and identity confirmed'],
+  ev:[E(0,`Simulator (mother) tells the nurse her ${age}-year-old ${kid} is missing`,'Nurse calls Code Pink with a description','Simulator (actor)'),E(1,'Code Pink paged','All exits staffed, no one leaves with a child','Security officer'),E(4,`Security shares the description: ${age}-year-old ${kid} in a red shirt`,'All posts confirm they received it','Security officer'),E(8,'CCTV shows the child near the east stairwell','Search team sent to the stairwell','Incident commander'),E(12,'Child found with a visitor','Identity checked with the mother','Unit charge nurse'),E(15,'All clear','Debrief','Drill controller')]},
+ BROWN:{hva:'Hazardous material spill',story:`A 5-litre container of formalin breaks in the corridor of ${loc}. Two staff report eye irritation.`,obj:['Area isolated quickly','Spill kit used correctly','Exposed staff sent for assessment'],
+  ev:[E(0,`Simulator drops a marked container in ${loc}`,'Staff move away and call Code Brown','Simulator (actor)'),E(2,'Code Brown paged','Area isolated, ventilation checked','Unit charge nurse'),E(5,'Spill team arrives','Safety data sheet checked, spill kit used','Responding team'),E(10,'Two staff report eye irritation','Eye wash and referral to ED','Safety officer'),E(16,'Spill cleaned','Waste bagged and labelled; all clear','Incident commander')]},
+ ORANGE:{hva:'Mass casualty incident',story:`A bus accident on the highway near ${area(d.area).name}: 12 casualties are expected within 20 minutes.`,obj:['Triage area ready before the first patient','Extra staff called in','Bed status reported'],
+  ev:[E(0,'Switchboard receives the alert from the Red Crescent','Code Orange activated','Switchboard'),E(3,'Incident command post opened','Roles handed out with action cards','Incident commander'),E(10,'Triage area ready at the entrance','Triage tags available','Responding team'),E(20,'First 4 casualties arrive (actors)','Triage and treatment areas used','Simulator (actor)'),E(35,'Bed and staff status requested','Report sent to command post','Unit charge nurse'),E(50,'Last casualty treated','Stand down and debrief','Drill controller')]},
+ YELLOW:{hva:'Bomb threat',story:`The switchboard receives a phone call saying a bomb has been placed in ${loc}.`,obj:['Bomb threat checklist completed','Search done safely','Police notified'],
+  ev:[E(0,'Simulator calls the switchboard with the threat','Call taker completes the checklist','Simulator (actor)'),E(2,'Code Yellow paged','Staff search their own area, radios off','Unit charge nurse'),E(8,'Suspicious bag found','Area cleared, no one touches it','Security officer'),E(12,'Police informed (simulated)','Cordon kept','Incident commander'),E(20,'Bag cleared (simulated)','All clear','Drill controller')]},
+ GREY:{hva:'Violent person',story:`A relative becomes aggressive at the nurse station of ${loc}, shouting and throwing objects.`,obj:['Security within 5 minutes','De-escalation tried','Others moved to safety'],
+  ev:[E(0,'Simulator starts shouting at the nurse station','Staff keep distance and call Code Grey','Simulator (actor)'),E(1,'Code Grey paged','Patients and visitors moved away','Unit charge nurse'),E(4,'Security arrives','De-escalation','Security officer'),E(9,'Person calms down','Escorted out; incident report','Security officer'),E(12,'End','Debrief','Drill controller')]},
+ SILVER:{hva:'Violent person',story:`A person with a knife is reported in the lobby of ${loc}.`,obj:['Run-hide-fight message announced','Zone locked down','Police notified'],
+  ev:[E(0,'Simulator reported in the lobby','Staff call Code Silver','Simulator (actor)'),E(1,'Code Silver paged with location','Run, hide or lock doors','Switchboard'),E(3,'Security sets a cordon','No one enters the lobby','Security officer'),E(10,'Police arrive (simulated)','Handover to police','Incident commander'),E(18,'All clear','Debrief','Drill controller')]},
+ GREEN:{hva:'Power outage',story:`A water leak above the electrical room near ${loc} forces the evacuation of the unit.`,obj:['Evacuation route used','Headcount at the assembly point','Patients moved with their records'],
+  ev:[E(0,`Facilities reports a leak near ${loc}`,'Code Green called by the incident commander','Facilities technician'),E(2,'Code Green paged','Staff prepare patients by priority','Unit charge nurse'),E(6,'First patients moved','Records and medicines go with patients','Responding team'),E(15,'Unit empty','Headcount at the assembly point','Incident commander'),E(20,'End','Debrief','Drill controller')]},
+ IT:d.area==='DH'?{hva:'Medical gas failure',story:`The oxygen pressure alarm sounds in ${loc}. Pipeline supply drops and patients on oxygen need backup cylinders.`,obj:['Backup cylinders to patients within 10 minutes','Facilities and switchboard informed','Radio contact with the facilities control room'],
+  ev:[E(0,`Oxygen alarm panel in ${loc} shows low pressure (simulated)`,'Charge nurse checks patients on oxygen','Simulator (actor)'),E(2,'Code called for medical gas failure','Facilities called by radio','Unit charge nurse'),E(5,'Facilities technician arrives','Checks the zone valve and manifold','Facilities technician'),E(8,'Backup cylinders brought','Cylinders connected to patients','Responding team'),E(20,'Pipeline supply back (simulated)','All clear','Incident commander')]}
+  :{hva:'IT system failure',story:`The electronic health record is down in ${loc} for 2 hours during the morning clinic.`,obj:['Downtime forms used','Results passed by phone','Data entered after recovery'],
+  ev:[E(0,'IT announces the downtime','Staff switch to paper forms','Switchboard'),E(5,'Lab results needed for a patient','Results phoned and read back','Unit charge nurse'),E(30,'Medication order needed','Paper order and double check','Responding team'),E(120,'System back','Back-entry of data','Incident commander')]}};
+ const t=T[d.code],rs=[...new Set(['Drill controller','Evaluator / observer',...t.ev.map(e=>e.role)])],pool=STAFF.filter(s=>s.area===d.area);
+ return{...t,loc,roles:rs.map((r,i)=>({role:r,badge:pool[(h+i*7)%pool.length].badge}))}}
+const staff=b=>STAFF.find(s=>s.badge===b);
+/* Approximate 2026 Saudi public holidays (sample) */
+const HOLIDAYS=[['2026-02-22','2026-02-22','Founding Day'],['2026-03-19','2026-03-24','Eid al-Fitr (approx.)'],['2026-05-25','2026-05-30','Eid al-Adha (approx.)'],['2026-09-23','2026-09-23','National Day']];
+const RAMADAN=['2026-02-18','2026-03-19'];
+const holiday=s=>{const h=HOLIDAYS.find(([a,b])=>s>=a&&s<=b);return h?h[2]:null};
+const inRamadan=s=>s>=RAMADAN[0]&&s<=RAMADAN[1];
+
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const STAFF=(()=>{const r=mulberry(42);const F=['Ahmed','Fatimah','Mohammed','Aisha','Abdulaziz','Nora','Faisal','Hind','Sultan','Mona','Turki','Reem','Bandar','Lama','Nawaf','Dana','Rakan','Joud','Ziyad','Shahad','Maria','John','Priya','Joseph','Anna','Rahul','Leila','Kareem','Salma','Hassan'];
+ const L=['Al-Qahtani','Al-Ghamdi','Al-Otaibi','Al-Harbi','Al-Zahrani','Al-Dossary','Al-Shehri','Al-Mutairi','Al-Anazi','Al-Subaie','Al-Shammari','Al-Malki','Al-Juhani','Al-Rasheed','Al-Amri','Santos','Thomas','Nair','Fernandes','Haddad','Khan','Saleh','Mansour','Yousef','Ibrahim'];
+ const J=['Staff Nurse','Charge Nurse','Physician','Resident','Respiratory Therapist','Pharmacist','Lab Technologist','Radiographer','Security Officer','Facilities Technician','Clerk','Patient Care Assistant','Paramedic','IT Analyst','Safety Officer'];
+ const pick=a=>a[Math.floor(r()*a.length)];const out=[];
+ for(let i=0;i<300;i++){const d=DEPTS[Math.floor(r()*DEPTS.length)];const t=r();
+  out.push({badge:'B'+(704100+i*37),name:pick(F)+' '+pick(L),job:pick(J),dept:d.id,area:d.area,training:t<.82?'Current':t<.94?'Due in 30 days':'Expired'})}
+ return out})();
+
+/* ---------- Date helpers (ISO yyyy-mm-dd, UTC) ---------- */
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOWN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const D=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d))};
+const iso=t=>t.toISOString().slice(0,10);
+const addDays=(s,n)=>{const t=D(s);t.setUTCDate(t.getUTCDate()+n);return iso(t)};
+const dow=s=>D(s).getUTCDay();
+const diffDays=(a,b)=>Math.round((D(b)-D(a))/864e5);
+const weekStart=s=>addDays(s,-dow(s)); /* KSA working week starts Sunday */
+const fmt=s=>s?`${+s.slice(8)} ${MON[+s.slice(5,7)-1]} ${s.slice(0,4)}`:'—';
+const fmtd=s=>s?`${DOWN[dow(s)]} ${fmt(s)}`:'—';
+const pad=n=>String(n).padStart(2,'0');
+const monthEnd=m=>iso(new Date(Date.UTC(YEAR,m,0)));
+const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function periods(f){const o=[];
+ if(f==='M')for(let m=1;m<=12;m++)o.push({key:`${YEAR}-${pad(m)}`,label:`${MON[m-1]} ${YEAR}`,start:`${YEAR}-${pad(m)}-01`,end:monthEnd(m)});
+ if(f==='Q'||f==='Q3')for(let q=1;q<=4;q++){const p={key:`${YEAR}Q${q}`,label:`Q${q} ${YEAR}`,start:`${YEAR}-${pad(q*3-2)}-01`,end:monthEnd(q*3)};
+  if(f==='Q')o.push(p);else['Day','Evening','Night'].forEach(sh=>o.push({...p,shift:sh}))}
+ if(f==='H'){o.push({key:`${YEAR}H1`,label:`H1 ${YEAR}`,start:`${YEAR}-01-01`,end:`${YEAR}-06-30`});o.push({key:`${YEAR}H2`,label:`H2 ${YEAR}`,start:`${YEAR}-07-01`,end:`${YEAR}-12-31`})}
+ if(f==='Y')o.push({key:`${YEAR}`,label:`Year ${YEAR}`,start:`${YEAR}-01-01`,end:`${YEAR}-12-31`});
+ return o}
+
+/* ---------- State ---------- */
+function fresh(){return{v:3,demoDate:'2025-12-01',planStatus:'Not started',freq:JSON.parse(JSON.stringify(DEFAULT_FREQ)),
+ settings:{approvalMode:'area',earlierOff:true,maxPerWeek:3,minGap:14,pickDeadline:'2025-12-18',scriptLead:30,scriptDue:14,requireScript:true,hvaRequired:false,aarDue:14,gapRule:'type',datixAuto:true},gaps:[],gseq:0,
+ drills:[],units:{},changes:[],emails:[],seq:0,role:'admin',dept:'SFP',sentAt:null}}
+function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===3)return s}}catch(e){}return fresh()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let S=load();
+const UI={page:'overview',f:{area:'',code:'',month:'',status:'',q:'',mine:true},drawer:null,modal:null,ds:'depts',dsq:'',ml:'freq',sid:null,rid:null,pq:'',aid:null,gap:null,rf:'all',gf:{status:'open',type:'',owner:'',q:'',esc:''}};
+let SILENT=false;
+
+const ADMIN='Huda Al-Ghamdi (EPPU coordinator)',OEMC='Dr. Faisal Al-Mutairi (OEMC chair)';
+const dept=id=>DEPTS.find(d=>d.id===id)||{id,name:id,head:'',area:''};
+const code=id=>CODES.find(c=>c.id===id);
+const area=id=>AREAS.find(a=>a.id===id);
+const drill=id=>S.drills.find(d=>d.id===id);
+const OBSERVER='Nadia Al-Harthi (EPPU observer)',DOM='Dr. Salma Al-Jaber (DOM)';
+const reviewerName=d=>{const r=code(d.code).reviewer,x=DEPTS.find(k=>k.name===r);return`${x?x.head:'Dr. Maryam Al-Dossary'} (${r})`};
+const me=(d)=>S.role==='admin'?ADMIN:S.role==='oemc'?OEMC:S.role==='observer'?OBSERVER:S.role==='dom'?DOM:S.role==='reviewer'?(d?reviewerName(d):'Code reviewer'):`${dept(S.dept).head} (${dept(S.dept).name})`;
+const ROLE_NAMES={admin:'EPPU admin',proponent:'Proponent',oemc:'OEMC reviewer',observer:'Observer',reviewer:'Code reviewer (AAR)',dom:'DOM approver',owner:'Gap owner / CPH'};
+const eff=d=>d.current||d.planned;
+const unitOf=d=>S.settings.approvalMode==='area'?d.area:'ALL';
+const unitIds=()=>S.settings.approvalMode==='area'?AREAS.map(a=>a.id):['ALL'];
+const unitName=u=>u==='ALL'?'Whole plan':`${u} · ${area(u).name}`;
+const unit=u=>S.units[u]||(S.units[u]={status:'Draft'});
+function log(d,text){d.history.push({at:S.demoDate,who:me(),text})}
+function mail(to,subject,body){S.emails.unshift({at:S.demoDate,to,subject,body})}
+function toast(m){if(SILENT)return;const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
+function done(m){if(SILENT)return;tick();save();if(m)toast(m);render()}
+function fail(m){if(!SILENT)toast(m);return false}
+
+/* ---------- Business rules: date check ---------- */
+function check(d,date,mode='plan'){const e=[],w=[];
+ if(!date)return{e:['Pick a date'],w};
+ if(date.slice(0,4)!==String(YEAR))e.push(`Date must be in ${YEAR}`);
+ const inWin=date>=d.start&&date<=d.end;
+ if(mode==='plan'&&!inWin)e.push(`Outside the required period (${fmt(d.start)} to ${fmt(d.end)})`);
+ if(mode==='change'&&!inWin)w.push(`Moves out of its required period (${d.label}); that period's mandatory drill would be missed`);
+ if(mode==='redo'){const m=d.notDoneDate.slice(0,7);if(date.slice(0,7)!==m)e.push(`A redo must be in the same month (${MON[+m.slice(5)-1]})`);if(date<=d.notDoneDate)e.push('A redo must be after the drill that was not completed')}
+ if(mode!=='plan'&&date<=S.demoDate)e.push(`Must be after today (demo date ${fmt(S.demoDate)})`);
+ if(mode==='change'&&d.original&&date<d.original&&S.settings.earlierOff)w.push('Earlier than the approved date: counts as off-schedule (setting)');
+ const wd=dow(date);if(wd===5||wd===6)w.push(`${DOWN[wd]} is a weekend day`);
+ const h=holiday(date);if(h)w.push(`Public holiday: ${h}`);
+ if(inRamadan(date))w.push('During Ramadan (reduced working hours)');
+ const oth=S.drills.filter(x=>x.id!==d.id&&x.area===d.area&&eff(x));
+ const same=oth.filter(x=>eff(x)===date);if(same.length)w.push(`Same day as ${same.map(x=>x.id).join(', ')} in ${d.area}`);
+ const wk=weekStart(date),n=oth.filter(x=>weekStart(eff(x))===wk).length;if(n>=S.settings.maxPerWeek)w.push(`${d.area} already has ${n} drills that week (limit ${S.settings.maxPerWeek})`);
+ const near=oth.filter(x=>x.code===d.code&&(x.shift||'')===(d.shift||'')&&Math.abs(diffDays(eff(x),date))<S.settings.minGap);
+ if(near.length)w.push(`Less than ${S.settings.minGap} days from ${near[0].id} (${fmt(eff(near[0]))})`);
+ return{e,w}}
+const warns=d=>eff(d)&&!['Completed'].includes(d.status)?check(d,eff(d),'plan').w.concat(eff(d)<d.start||eff(d)>d.end?['Outside its required period']:[]):[];
+
+function canEditDate(d){if(S.planStatus==='Not started')return false;const u=unit(unitOf(d)).status;
+ if(!['Draft','Returned'].includes(u)||!['Open','Date proposed'].includes(d.status))return false;
+ return S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept)}
+const canChange=d=>(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept)||(S.role==='observer'&&d.current<=S.demoDate))&&(d.status==='Scheduled'||d.status==='Redo required');
+const isDue=d=>d.status==='Scheduled'&&d.current<=S.demoDate;
+const scriptOk=d=>!S.settings.requireScript||(d.script&&d.script.status==='Approved');
+const canRecord=d=>['admin','observer'].includes(S.role)&&isDue(d);
+const canRun=d=>canRecord(d)&&scriptOk(d);
+
+/* ---------- Business rules: scripts (UC4) ---------- */
+function newScript(d){return{status:'Requested',requestedAt:S.demoDate,due:addDays(eff(d),-S.settings.scriptDue),story:'',objectives:['','',''],hva:'',location:'',map:null,roles:[],events:[],rounds:[],submittedAt:null,approvedAt:null,warnings:[]}}
+function fillTemplate(d){const t=tpl(d),s=d.script;Object.assign(s,{story:t.story,objectives:t.obj.slice(),hva:t.hva,location:t.loc,events:t.ev.map(e=>({...e})),roles:t.roles.map(r=>({...r}))})}
+/* Request the script N days before the drill (setting); runs whenever state changes */
+function tick(){S.drills.forEach(d=>{if(d.original&&!d.script&&['Scheduled','Change pending'].includes(d.status)&&addDays(eff(d),-S.settings.scriptLead)<=S.demoDate){
+ d.script=newScript(d);log(d,`Script template requested from the proponent, due ${fmt(d.script.due)}`);
+ mail(`${dept(d.dept).head} <${d.dept}>`,`Write the drill script for ${d.id}`,`The drill is on ${fmt(eff(d))}. Please submit the scenario and event list by ${fmt(d.script.due)}.`)}});
+ tick3()}
+
+/* ---------- Business rules: After Action Report (UC6) and gaps (UC7) ---------- */
+function defaultOwner(type,d){const fac={DH:'FAC',AH:'AHF',RT:'RTF'}[d.area]||LOCAL[d.area];
+ return type==='Facility'?fac:type==='Equipment'?(d.area==='DH'?'BME':fac):type==='IT system'?'ITS':type==='Security'?(d.area==='DH'?'SEC':LOCAL[d.area]||'SEC'):d.dept}
+const gapDue=(type,from)=>addDays(from,S.settings.gapRule==='30'?30:GAP_DAYS[type]);
+const now=()=>{const t=new Date();return`${pad(t.getHours())}:${pad(t.getMinutes())}`};
+function newAAR(d){const r=d.run,s=d.script||{},items=checklist(d.code).flatMap(x=>x.items);
+ return{status:'Draft',created:r.date,due:addDays(r.date,S.settings.aarDue),reminders:[],date:r.date,participants:r.participants.length,
+  summary:`${code(d.code).name} drill in ${s.location||area(d.area).name}, ${area(d.area).name}, ${r.start} to ${r.end}. ${s.story||''}`,
+  objectives:(s.objectives||[]).filter(o=>o.trim()).map(o=>({text:o,rating:'',note:''})),
+  strengths:items.filter(i=>r.checks[i.k]&&r.checks[i.k].v==='Met').slice(0,3).map(i=>i.t),
+  improvements:r.findings.filter(f=>f.gap).map(f=>({text:f.text,type:f.type,owner:defaultOwner(f.type,d),due:''})),sigs:[],returns:[]}}
+function aarChecks(d){const a=d.aar,r=d.run,imp=a.improvements,has=t=>imp.some(x=>x.text.toLowerCase().includes(t.toLowerCase().slice(0,18)));
+ const notMet=checklist(d.code).flatMap(x=>x.items).filter(i=>r.checks[i.k]&&r.checks[i.k].v==='Not met');
+ return[[`Drill date matches the drill-day record (${fmt(r.date)})`,a.date===r.date],
+  [`Number of participants matches the drill-day record (${r.participants.length})`,+a.participants===r.participants.length],
+  ['Summary written',a.summary.trim().length>=40],
+  ['Every script objective is rated',a.objectives.length>0&&a.objectives.every(o=>o.rating)],
+  [`Every checklist item marked "Not met" is in the improvement plan${notMet.length?` (${notMet.length})`:''}`,notMet.every(i=>has(i.t))],
+  ['Every finding flagged as a possible gap is in the improvement plan',r.findings.filter(f=>f.gap).every(f=>has(f.text))],
+  ['Every improvement item has a description, type and owner',imp.every(x=>x.text.trim()&&x.type&&x.owner)],
+  ['At least one strength recorded',a.strengths.some(s=>s.trim())]]}
+const nextStep=a=>AAR_STEPS[a.sigs.length];
+const canEditAAR=d=>d.aar&&['Draft','Returned'].includes(d.aar.status)&&(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept));
+const canSignAAR=d=>{if(!d.aar||d.aar.status==='Approved')return false;const st=nextStep(d.aar);if(!st)return false;
+ return st[2]==='proponent'?canEditAAR(d):S.role===st[2]};
+function makeGaps(d,at){d.aar.improvements.forEach(x=>{const g={id:'G-'+String(++S.gseq).padStart(3,'0'),drill:d.id,code:d.code,area:d.area,text:x.text,type:x.type,owner:x.owner,
+  created:at,due:x.due||gapDue(x.type,at),status:'Open',closedAt:null,esc:0,maint:null,datix:null,notes:[{at,who:'System',text:`Created from the approved report of ${d.id}`}]};
+  if(g.type==='Facility'){g.maint={no:'PM-'+(10004500+S.gseq),status:'Sent to SAP PM'};g.notes.push({at,who:'System',text:`Maintenance request ${g.maint.no} created in SAP (mock)`});
+   mail(`${dept(g.owner).head} <${g.owner}>`,`Maintenance request ${g.maint.no}`,`Facility gap ${g.id} from ${d.id}: ${g.text}`)}
+  S.gaps.push(g);mail(`${dept(g.owner).head} <${g.owner}>`,`New gap ${g.id} assigned to you`,`${g.text}. Due ${fmt(g.due)}.`)})}
+/* Reminders, escalation and Datix referral run whenever state changes */
+function tick3(){S.drills.forEach(d=>{if(d.run&&d.run.result==='Completed'&&!d.aar){d.aar=newAAR(d);log(d,`After Action Report opened, due ${fmt(d.aar.due)}`);
+  mail(`${dept(d.dept).head} <${d.dept}>`,`Prepare the After Action Report for ${d.id}`,`Due ${fmt(d.aar.due)} (${S.settings.aarDue} days after the drill).`)}
+  const a=d.aar;if(a&&!a.sigs.length)[7,14].forEach(n=>{if(!a.reminders.includes(n)&&diffDays(a.created,S.demoDate)>=n){a.reminders.push(n);
+   mail(`${dept(d.dept).head} <${d.dept}>`,`Reminder (day ${n}): report for ${d.id}`,n>=S.settings.aarDue?'The report is due today or overdue.':`Due ${fmt(a.due)}.`)}})});
+ S.gaps.forEach(g=>{if(g.status==='Closed')return;const age=diffDays(g.created,S.demoDate),lv=age>=90?3:age>=60?2:age>=30?1:0;
+  if(lv>g.esc){g.esc=lv;g.notes.push({at:S.demoDate,who:'System',text:`Escalated: ${ESC[lv]}`});
+   mail([`${dept(g.owner).head} <${g.owner}>`,lv>=2?'department head (CPH)':'',lv>=3?'executive team':''].filter(Boolean).join(', '),`Gap ${g.id} open ${age} days`,g.text)}
+  if(S.settings.datixAuto&&!g.datix&&g.due<S.demoDate){g.datix='DX-'+S.demoDate.slice(0,4)+'-'+String(4100+ +g.id.slice(2));g.notes.push({at:S.demoDate,who:'System',text:`Overdue: sent to Datix as ${g.datix} (mock)`});
+   mail('Datix <datix>',`Overdue drill gap ${g.id}`,`${g.text}. Owner ${dept(g.owner).name}, due ${fmt(g.due)}.`)}})}
+const canEditScript=d=>d.script&&['Requested','Draft','Returned'].includes(d.script.status)&&(S.role==='admin'||(S.role==='proponent'&&d.dept===S.dept));
+function facts(t){t=(t||'').toLowerCase();const G={girl:'F',woman:'F',female:'F',boy:'M',man:'M',male:'M'};
+ return{ages:[...t.matchAll(/(\d+)[- ]year[- ]old/g)].map(m=>m[1]),gen:[...t.matchAll(/\b(girl|boy|woman|man|female|male)\b/g)].map(m=>G[m[1]]),locs:[...t.matchAll(/\b(ward|pod|wing|building)\s+([a-z0-9]+)\b/g)].map(m=>m[1]+' '+m[2])}}
+function checkScript(d){const s=d.script,e=[],w=[];
+ if(!s.story||s.story.length<30)e.push('Write the scenario story (a sentence or two at least)');
+ if(!s.objectives.filter(x=>x.trim()).length)e.push('Add at least one objective');
+ if(S.settings.hvaRequired&&!s.hva)e.push('Link the script to a ranked hazard (HVA) - required by setting');
+ if(!s.events.length)e.push('Add the event list');
+ s.events.forEach((x,i)=>{if(!x.event.trim())e.push(`Event ${i+1}: describe what happens`);if(!x.role)e.push(`Event ${i+1}: pick a role`);
+  else if(!s.roles.some(r=>r.role===x.role))w.push(`Event ${i+1}: role "${x.role}" is not in the roles table`);if(!x.expected.trim())w.push(`Event ${i+1}: no expected action`)});
+ for(let i=1;i<s.events.length;i++)if(+s.events[i].t<+s.events[i-1].t)w.push(`Event ${i+1} is earlier than event ${i}; minutes should go forward`);
+ ['Drill controller','Evaluator / observer'].forEach(r=>{if(!s.roles.some(x=>x.role===r&&x.badge))e.push(`Assign a person as ${r}`)});
+ s.roles.forEach(r=>{if(!r.badge&&!['Drill controller','Evaluator / observer'].includes(r.role))w.push(`No person assigned to ${r.role}`)});
+ const F=facts(s.story),gn=g=>g==='F'?'female':'male';
+ s.events.forEach((x,i)=>{const f=facts(x.event+' '+x.expected);
+  f.ages.forEach(a=>{if(F.ages.length&&!F.ages.includes(a))w.push(`Story vs event ${i+1}: event says ${a}-year-old, story says ${F.ages.join(', ')}-year-old`)});
+  [...new Set(f.gen)].forEach(g=>{if(F.gen.length&&!F.gen.includes(g))w.push(`Story vs event ${i+1}: event says ${gn(g)}, story says ${gn(F.gen[0])}`)});
+  f.locs.forEach(l=>{if(F.locs.length&&!F.locs.includes(l))w.push(`Story vs event ${i+1}: event mentions ${l}, story is in ${F.locs.join(', ')}`)})});
+ return{e,w:[...new Set(w)]}}
+
+/* ---------- Actions ---------- */
+const A={
+ generate(){if(S.role!=='admin')return fail('Only the EPPU admin can generate the plan');
+  S.drills=[];CODES.forEach(c=>AREAS.forEach(a=>{const f=S.freq[c.id][a.id];if(f==='-')return;
+   periods(f).forEach(p=>{const id=`${c.id}-${a.id}-${p.key.replace(String(YEAR),'').replace(/^-/,'M')||'Y'}${p.shift?'-'+p.shift[0]:''}`;
+    S.drills.push({id,code:c.id,area:a.id,dept:proponentFor(c.id,a.id),freq:f,period:p.key,label:p.label,start:p.start,end:p.end,shift:p.shift||null,
+     planned:null,original:null,current:null,status:'Open',changes:0,history:[{at:S.demoDate,who:'System',text:`Slot created from rule: ${c.name}, ${FREQ[f].toLowerCase()} in ${a.id}`}]})})}));
+  S.units={};unitIds().forEach(u=>unit(u));S.planStatus='Collecting dates';
+  const by={};S.drills.forEach(d=>by[d.dept]=(by[d.dept]||0)+1);
+  Object.entries(by).forEach(([k,n])=>mail(`${dept(k).head} <${k}>`,`Pick dates for your ${n} drills in the ${YEAR} plan`,`EPPU has opened the ${YEAR} drill plan. Please choose a date for each of your ${n} drills by ${fmt(S.settings.pickDeadline)}.`));
+  done(`${S.drills.length} drill slots created from the frequency rules`)},
+ setDate(id,v){const d=drill(id);if(!canEditDate(d))return fail('You cannot change this date now');
+  if(!v){d.planned=null;d.status='Open';log(d,'Date cleared');return done()}
+  const r=check(d,v,'plan');if(r.e.length){done();return fail(r.e[0])}
+  d.planned=v;d.status='Date proposed';log(d,`Date proposed: ${fmtd(v)}`+(r.w.length?` (warnings: ${r.w.join('; ')})`:''));
+  done(r.w.length?`Saved with ${r.w.length} warning(s): ${r.w[0]}`:'Date saved')},
+ suggest(scope){const list=S.drills.filter(d=>!d.planned&&canEditDate(d)&&(scope==='all'||d.dept===S.dept)).sort((a,b)=>diffDays(a.start,a.end)-diffDays(b.start,b.end));
+  let n=0;for(const d of list){const len=diffDays(d.start,d.end)+1,off=hash(d.id)%len;let pick=null,fb=null;
+   for(let i=0;i<len;i++){const c=addDays(d.start,(off+i)%len),r=check(d,c,'plan');if(r.e.length)continue;
+    if(!fb&&dow(c)<5&&!holiday(c))fb=c;if(!r.w.length){pick=c;break}}
+   const v=pick||fb;if(v){d.planned=v;d.status='Date proposed';log(d,`Date suggested by the app: ${fmtd(v)}`);n++}}
+  done(n?`Suggested dates for ${n} drills. You can still change any of them.`:'No open slots to fill')},
+ submit(u){if(S.role!=='admin')return fail('Only the EPPU admin submits the plan');
+  const ds=S.drills.filter(d=>unitOf(d)===u);const open=ds.filter(d=>!d.planned).length;
+  if(open)return fail(`${open} drill(s) in ${unitName(u)} still have no date`);
+  const nw=ds.filter(d=>warns(d).length).length;
+  unit(u).status='Submitted';unit(u).at=S.demoDate;ds.forEach(d=>{d.status='Submitted';log(d,'Submitted to OEMC')});
+  if(S.planStatus==='Collecting dates')S.planStatus='In approval';
+  mail(`OEMC <oemc>`,`Approve ${YEAR} drill plan: ${unitName(u)}`,`${ds.length} drills submitted by EPPU. ${nw} carry warnings. Please approve or return with comments.`);
+  done(`${unitName(u)} submitted to OEMC`)},
+ approve(u){if(S.role!=='oemc')return fail('Only OEMC approves the plan');
+  const ds=S.drills.filter(d=>unitOf(d)===u);unit(u).status='Approved';unit(u).by=OEMC;unit(u).at=S.demoDate;unit(u).comment='';
+  ds.forEach(d=>{d.original=d.planned;d.current=d.planned;d.status='Scheduled';log(d,`Approved by OEMC for ${fmtd(d.planned)}. This is now the original approved date.`)});
+  const depts=[...new Set(ds.map(d=>d.dept))];depts.forEach(k=>mail(`${dept(k).head} <${k}>`,`Your ${YEAR} drill dates are approved (${unitName(u)})`,`OEMC approved ${ds.filter(d=>d.dept===k).length} drill dates. Any change now needs a change request.`));
+  if(unitIds().every(x=>unit(x).status==='Approved')){S.planStatus='Approved';mail(`EPPU <eppu>`,`${YEAR} drill plan fully approved`,'All parts of the plan are approved. You can now send the copy to MOH and Aramco MSMD.')}
+  done(`${unitName(u)} approved`)},
+ returnUnit(u,comment){if(S.role!=='oemc')return fail('Only OEMC can return the plan');if(!comment)return fail('Add a comment for EPPU');
+  const ds=S.drills.filter(d=>unitOf(d)===u);unit(u).status='Returned';unit(u).comment=comment;unit(u).at=S.demoDate;
+  ds.forEach(d=>{d.status='Date proposed';log(d,`Returned by OEMC: ${comment}`)});
+  mail(`EPPU <eppu>`,`Plan returned: ${unitName(u)}`,comment);UI.modal=null;done(`${unitName(u)} returned to EPPU`)},
+ sendMOH(){if(S.role!=='admin')return fail('Only the EPPU admin sends the copy');if(S.planStatus!=='Approved')return fail('The whole plan must be approved first');
+  S.planStatus='Sent to MOH & MSMD';S.sentAt=S.demoDate;
+  mail('Ministry of Health (regional) <moh>',`${YEAR} emergency drill schedule`,`Attached: approved schedule, ${S.drills.length} drills across ${AREAS.length} areas.`);
+  mail('Aramco MSMD <msmd>',`${YEAR} emergency drill schedule`,`Attached: approved schedule, ${S.drills.length} drills across ${AREAS.length} areas.`);
+  done('Copy sent to MOH and Aramco MSMD (see email log)')},
+ requestChange(id,to,reason,comment,type){const d=drill(id);if(!canChange(d))return fail('You cannot request a change on this drill');
+  if(!reason)return fail('Pick a reason');const r=check(d,to,type);if(r.e.length)return fail(r.e[0]);
+  const c={id:'CR-'+pad(++S.seq).padStart(3,'0'),drill:id,type,from:type==='redo'?d.notDoneDate:d.current,to,reason,comment,warnings:r.w,status:'Pending',by:me(),at:S.demoDate};
+  S.changes.unshift(c);d.prevStatus=d.status;d.status='Change pending';log(d,`${type==='redo'?'Redo':'Change'} requested (${c.id}): ${fmtd(c.from)} to ${fmtd(to)}. Reason: ${reason}${comment?'. '+comment:''}`);
+  mail('OEMC <oemc>',`Change request ${c.id}: ${id}`,`${me()} asks to move ${id} from ${fmt(c.from)} to ${fmt(to)}. Reason: ${reason}.`);
+  UI.modal=null;done(`${c.id} sent to OEMC`);return true},
+ decide(cid,ok,comment){if(S.role!=='oemc')return fail('Only OEMC decides change requests');const c=S.changes.find(x=>x.id===cid),d=drill(c.drill);
+  if(!ok&&!comment)return fail('Add a reason for rejecting');
+  c.status=ok?'Approved':'Rejected';c.decidedBy=OEMC;c.decidedAt=S.demoDate;c.decision=comment||'';
+  if(ok){d.current=c.to;d.changes++;if(c.type==='redo')d.redo=true;d.status='Scheduled';log(d,`${c.id} approved: new date ${fmtd(c.to)}. Original approved date stays ${fmt(d.original)}.`)}
+  else{d.status=d.prevStatus||'Scheduled';log(d,`${c.id} rejected: ${comment}`)}
+  mail(`${dept(d.dept).head} <${d.dept}>`,`${c.id} ${c.status.toLowerCase()}`,ok?`${d.id} is now on ${fmt(c.to)}.`:`Reason: ${comment}`);
+  UI.modal=null;done(`${c.id} ${c.status.toLowerCase()}`)},
+ record(id,result,reason){const d=drill(id);if(!canRecord(d))return fail('This drill cannot be recorded yet');
+  if(result==='Completed'){d.status='Completed';d.doneDate=d.current;log(d,`Recorded as completed on ${fmtd(d.current)}`+(d.current===d.original?' (on the approved date)':` (approved date was ${fmt(d.original)})`))}
+  else{if(!reason)return fail('Say why it was not completed');d.status='Redo required';d.notDoneDate=d.current;d.notDoneReason=reason;
+   log(d,`Recorded as NOT completed: ${reason}. A redo must be done by ${fmt(monthEnd(+d.current.slice(5,7)))}.`);
+   mail(`${dept(d.dept).head} <${d.dept}>`,`Redo needed: ${d.id}`,`The drill on ${fmt(d.current)} was not completed (${reason}). Request a redo date in the same month.`)}
+  UI.modal=null;done(`${d.id}: ${result.toLowerCase()}`)},
+ /* --- UC4 scripts --- */
+ openScript(id){UI.sid=id;UI.page='script';UI.drawer=null;render();window.scrollTo(0,0)},
+ sSet(id,k,v){const d=drill(id);if(!canEditScript(d))return;d.script[k]=v;if(d.script.status==='Requested')d.script.status='Draft';save();refreshCheck(id)},
+ sObj(id,i,v){const d=drill(id);if(!canEditScript(d))return;d.script.objectives[i]=v;save();refreshCheck(id)},
+ sEv(id,i,k,v){const d=drill(id);if(!canEditScript(d))return;d.script.events[i][k]=k==='t'?Math.max(0,+v||0):v;if(d.script.status==='Requested')d.script.status='Draft';save();refreshCheck(id)},
+ sRole(id,i,k,v){const d=drill(id);if(!canEditScript(d))return;d.script.roles[i][k]=v;save();if(k==='role')render();else refreshCheck(id)},
+ sAdd(id,what){const d=drill(id);if(!canEditScript(d))return;const s=d.script;if(s.status==='Requested')s.status='Draft';
+  if(what==='event'){const last=s.events[s.events.length-1];s.events.push({t:last?+last.t+2:0,event:'',expected:'',role:''})}
+  if(what==='role')s.roles.push({role:'Responding team',badge:''});if(what==='obj')s.objectives.push('');done()},
+ sDel(id,what,i){const d=drill(id);if(!canEditScript(d))return;d.script[what].splice(i,1);done()},
+ sTemplate(id){const d=drill(id);if(!canEditScript(d))return;if((d.script.story||d.script.events.length)&&!confirm('Replace what you wrote with the template for this code?'))return;
+  fillTemplate(d);d.script.status='Draft';log(d,'Script started from the template');done('Template loaded. Edit it to fit your unit.')},
+ sMap(id,input){const d=drill(id),f=input.files&&input.files[0];if(!f||!canEditScript(d))return;const rd=new FileReader();
+  rd.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,900/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;
+   c.getContext('2d').drawImage(img,0,0,c.width,c.height);d.script.map=c.toDataURL('image/jpeg',.72);done('Map added')};img.src=rd.result};rd.readAsDataURL(f)},
+ sSubmit(id){const d=drill(id);if(!canEditScript(d))return fail('You cannot submit this script');const r=checkScript(d);if(r.e.length)return fail(`Fix ${r.e.length} problem(s) first: ${r.e[0]}`);
+  const s=d.script;s.status='Submitted';s.submittedAt=S.demoDate;s.warnings=r.w;log(d,`Script submitted to OEMC${r.w.length?` with ${r.w.length} warning(s)`:''}`);
+  mail('OEMC <oemc>',`Review drill script ${d.id}`,`${me()} submitted the script for ${d.id} (${fmt(eff(d))}). ${r.w.length} warning(s) from the automatic check.`);done('Script sent to OEMC')},
+ sDecide(id,ok,comment){const d=drill(id),s=d.script;if(S.role!=='oemc'||s.status!=='Submitted')return fail('Only OEMC reviews submitted scripts');if(!ok&&!comment)return fail('Add comments for the proponent');
+  s.rounds.push({at:S.demoDate,by:OEMC,decision:ok?'Approved':'Returned',comment:comment||''});s.status=ok?'Approved':'Returned';if(ok)s.approvedAt=S.demoDate;
+  log(d,ok?`Script approved by OEMC (round ${s.rounds.length})`:`Script returned by OEMC: ${comment}`);
+  mail(`${dept(d.dept).head} <${d.dept}>`,`Script ${d.id} ${ok?'approved':'returned'}`,ok?'You can run the drill as planned.':comment);UI.modal=null;done(ok?'Script approved':'Script returned to the proponent')},
+ /* --- UC5 drill day --- */
+ openRun(id){const d=drill(id);if(!canRecord(d))return fail('This drill is not due yet');if(!scriptOk(d))return fail('The script must be approved before drill day (setting)');
+  if(d.run&&d.run.result){d.prevRun=d.run;d.run=null}
+  if(!d.run)d.run={observer:me(),start:'09:00',end:'',checks:{},participants:[],findings:[],result:null};UI.rid=id;UI.page='run';UI.drawer=null;UI.pq='';save();render();window.scrollTo(0,0)},
+ rSet(id,k,v){const d=drill(id);d.run[k]=v;save()},
+ rCheck(id,k,v){const d=drill(id);const c=d.run.checks[k]||(d.run.checks[k]={v:'',note:''});c.v=c.v===v?'':v;save();render()},
+ rNote(id,k,v){const d=drill(id);(d.run.checks[k]||(d.run.checks[k]={v:'',note:''})).note=v;save()},
+ rAdd(id,b){const d=drill(id);if(!d.run.participants.includes(b))d.run.participants.push(b);UI.pq='';done()},
+ rAddDept(id,k){const d=drill(id);let n=0;STAFF.filter(s=>s.dept===k).forEach(s=>{if(!d.run.participants.includes(s.badge)){d.run.participants.push(s.badge);n++}});done(`${n} people added`)},
+ rDel(id,b){const d=drill(id);d.run.participants=d.run.participants.filter(x=>x!==b);done()},
+ rFinding(id){const d=drill(id),t=val('f-t'),ty=val('f-ty');if(!t)return fail('Describe the finding');
+  d.run.findings.push({text:t,type:ty,gap:document.getElementById('f-g').checked});done('Finding added')},
+ rFDel(id,i){drill(id).run.findings.splice(i,1);done()},
+ rFinish(id,result){const d=drill(id),r=d.run,items=checklist(d.code).flatMap(s=>s.items);
+  if(result==='Postponed'){UI.modal={type:'change',id};return render()}
+  if(result==='Completed'){const miss=items.filter(i=>!(r.checks[i.k]&&r.checks[i.k].v)).length;if(miss)return fail(`Answer all checklist items (${miss} left)`);if(!r.participants.length)return fail('Add at least one participant');if(!r.end)return fail('Enter the end time')}
+  const why=result==='Not completed'?val('r-why'):'';if(result==='Not completed'&&!why)return fail('Say why the drill was not completed');
+  r.result=result;r.date=d.current;r.observer=me();SILENT=true;A.record(id,result,why);SILENT=false;
+  log(d,`Drill day record: ${r.participants.length} participants, ${r.findings.length} finding(s)${r.findings.filter(f=>f.gap).length?`, ${r.findings.filter(f=>f.gap).length} flagged as possible gap`:''}`);
+  UI.page='day';done(`${d.id}: ${result.toLowerCase()}. The record is saved.`)},
+ /* --- UC6 After Action Report --- */
+ openAAR(id){UI.aid=id;UI.page='aar';UI.drawer=null;render();window.scrollTo(0,0)},
+ aSet(id,k,v){const d=drill(id);if(!canEditAAR(d))return;d.aar[k]=v;save();refreshAAR(id)},
+ aObj(id,i,k,v){const d=drill(id);if(!canEditAAR(d))return;d.aar.objectives[i][k]=v;save();if(k==='rating')render();else refreshAAR(id)},
+ aList(id,list,i,k,v){const d=drill(id);if(!canEditAAR(d))return;if(k===null)d.aar[list][i]=v;else d.aar[list][i][k]=v;save();if(['type','owner'].includes(k))render();else refreshAAR(id)},
+ aAdd(id,list){const d=drill(id);if(!canEditAAR(d))return;d.aar[list].push(list==='strengths'?'':{text:'',type:'Staff / training',owner:d.dept,due:''});done()},
+ aDel(id,list,i){const d=drill(id);if(!canEditAAR(d))return;d.aar[list].splice(i,1);done()},
+ aMissing(id){const d=drill(id),a=d.aar,r=d.run;if(!canEditAAR(d))return;let n=0;const has=t=>a.improvements.some(x=>x.text.toLowerCase().includes(t.toLowerCase().slice(0,18)));
+  checklist(d.code).forEach(sec=>sec.items.forEach(i=>{if(r.checks[i.k]&&r.checks[i.k].v==='Not met'&&!has(i.t)){const ty=sec.sec==='Communication'?'Communication':sec.sec==='Safety'?'Facility':'Staff / training';
+   a.improvements.push({text:`${i.t}: not done${r.checks[i.k].note?' ('+r.checks[i.k].note+')':''}`,type:ty,owner:defaultOwner(ty,d),due:''});n++}}));
+  r.findings.filter(f=>f.gap&&!has(f.text)).forEach(f=>{a.improvements.push({text:f.text,type:f.type,owner:defaultOwner(f.type,d),due:''});n++});done(n?`${n} item(s) added from drill day`:'Nothing missing')},
+ aSign(id){const d=drill(id),a=d.aar;if(!canSignAAR(d))return fail('It is not your turn to sign this report');const st=nextStep(a);
+  if(st[2]==='proponent'){const bad=aarChecks(d).filter(c=>!c[1]);if(bad.length)return fail(`${bad.length} continuity check(s) fail: ${bad[0][0]}`)}
+  const who=st[2]==='reviewer'?reviewerName(d):me();a.sigs.push({step:st[0],by:who,at:`${S.demoDate} ${now()}`});a.status=st[0];
+  d.history.push({at:S.demoDate,who,text:`Report signed: ${st[1]}`});const nx=nextStep(a);
+  if(nx)mail(nx[2]==='reviewer'?reviewerName(d):nx[2]==='oemc'?OEMC:DOM,`Sign the After Action Report for ${d.id}`,`Step ${a.sigs.length+1} of 4: ${nx[1]}.`);
+  else{makeGaps(d,S.demoDate);d.history.push({at:S.demoDate,who:'System',text:`${d.aar.improvements.length} gap(s) created from the approved report`})}
+  UI.modal=null;done(nx?`Signed. Next: ${nx[1]}`:`Report approved. ${a.improvements.length} gap(s) created.`)},
+ aReturn(id,comment){const d=drill(id),a=d.aar;if(!canSignAAR(d)||nextStep(a)[2]==='proponent')return fail('You cannot return this report');if(!comment)return fail('Add a comment');
+  const who=S.role==='reviewer'?reviewerName(d):me();a.returns.push({at:S.demoDate,by:who,comment});a.sigs=[];a.status='Returned';
+  d.history.push({at:S.demoDate,who,text:`Report returned: ${comment}`});mail(`${dept(d.dept).head} <${d.dept}>`,`Report ${d.id} returned`,comment);UI.modal=null;done('Report returned to the proponent')},
+ /* --- UC7 gaps --- */
+ openGap(id){UI.gap=id;render()},
+ gStatus(id,st,note){const g=S.gaps.find(x=>x.id===id);const own=S.role==='admin'||(S.role==='owner'&&g.owner===S.dept);if(!own)return fail('Only the gap owner or EPPU can update this gap');
+  if(st==='Closed'&&!note)return fail('Describe what was done to close the gap');
+  g.status=st;if(st==='Closed'){g.closedAt=S.demoDate;if(g.maint&&g.maint.status!=='Completed')g.maint.status='Completed'}else g.closedAt=null;
+  g.notes.push({at:S.demoDate,who:me(),text:`${st==='Open'?'Reopened':st}${note?': '+note:''}`});
+  if(st==='Closed')mail('EPPU <eppu>',`Gap ${g.id} closed`,note);UI.modal=null;done(`${g.id}: ${st.toLowerCase()}`)},
+ gNote(id,note){const g=S.gaps.find(x=>x.id===id);if(!note)return fail('Write a note');g.notes.push({at:S.demoDate,who:me(),text:note});UI.modal=null;done('Note added')},
+ gMaint(id){const g=S.gaps.find(x=>x.id===id);if(!g.maint)return;g.maint.status=g.maint.status==='Sent to SAP PM'?'In process':'Completed';g.notes.push({at:S.demoDate,who:'SAP PM (mock)',text:`Maintenance request ${g.maint.no}: ${g.maint.status}`});done()},
+ download(kind){const dl=(name,text,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()};
+  const csvOf=rows=>rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  if(kind==='json')dl('drill-demo-data.json',JSON.stringify({exported:S.demoDate,model:MODEL,masterData:{areas:AREAS,codes:CODES,frequency:S.freq,departments:DEPTS,roles:ROLES,hva:HVA,gapTypes:GAP_TYPES,gapDays:GAP_DAYS,changeReasons:REASONS},settings:S.settings,drills:S.drills.map(d=>({...d,script:d.script?{...d.script,map:d.script.map?'(image)':null}:null})),changeRequests:S.changes,gaps:S.gaps},null,1),'application/json');
+  if(kind==='gaps')dl('gaps.csv','﻿'+csvOf([['Gap','Drill','Code','Area','Description','Type','Owner','Created','Due','Status','Closed','Escalation','Maintenance','Datix'],...S.gaps.map(g=>[g.id,g.drill,g.code,g.area,g.text,g.type,dept(g.owner).name,g.created,g.due,g.status,g.closedAt,g.esc,g.maint&&g.maint.no,g.datix])]),'text/csv');
+  if(kind==='drills')dl('drills.csv','﻿'+csvOf([['Drill','Code','Area','Proponent','Period','Original date','Current date','Status','Changes','Script','Script approved','Drill result','Participants','Findings','Report','Report approved'],...S.drills.map(d=>[d.id,d.code,d.area,dept(d.dept).name,d.label,d.original,d.current,d.status,d.changes,d.script&&d.script.status,d.script&&d.script.approvedAt,d.run&&d.run.result,d.run&&d.run.participants.length,d.run&&d.run.findings.length,d.aar&&d.aar.status,d.aar&&d.aar.sigs[3]&&d.aar.sigs[3].at])]),'text/csv')},
+ setRole(r){S.role=r;UI.f.mine=true;if(['script','run','aar'].includes(UI.page))UI.page='overview';
+  if(r==='owner'&&S.gaps.length&&!S.gaps.some(g=>g.owner===S.dept)){const c={};S.gaps.forEach(g=>{if(g.status!=='Closed')c[g.owner]=(c[g.owner]||0)+1});S.dept=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||S.dept}
+  if(r==='proponent'&&S.drills.length&&!S.drills.some(d=>d.dept===S.dept))S.dept='SFP';done()},setDept(k){S.dept=k;done()},
+ setDate0(v){if(!v)return;S.demoDate=v;done(`Demo date set to ${fmt(v)}`)},
+ reset(kind){if(!SILENT&&!confirm('Throw away your changes in this browser and load the sample data again?'))return;
+  const role=S.role,dp=S.dept;S=kind==='mid'?buildMid():fresh();S.role=role;S.dept=dp;UI.drawer=null;UI.modal=null;UI.page='overview';
+  save();render();toast(kind==='mid'?'Mid-year example loaded (demo date 15 Jul 2026)':'Fresh planning start loaded (demo date 1 Dec 2025)')},
+ setFreq(c,a,v){if(S.planStatus!=='Not started')return fail('Rules are locked once the plan is generated. Reset to change them.');S.freq[c][a]=v;done()},
+ setSetting(k,v){if(k==='approvalMode'&&S.planStatus!=='Not started'&&S.planStatus!=='Collecting dates')return fail('Approval mode is locked once submission starts');
+  S.settings[k]=v;if(k==='approvalMode'){S.units={};if(S.planStatus!=='Not started')unitIds().forEach(u=>unit(u))}done('Setting saved')},
+ go(p){UI.page=p;UI.drawer=null;render();window.scrollTo(0,0)},
+ open(id){UI.drawer=id;UI.gap=null;render()},close(){UI.drawer=null;UI.modal=null;UI.gap=null;render()},
+ modal(type,id){UI.modal={type,id};render()}
+};
+
+/* ---------- Mid-year example: same actions, replayed ---------- */
+function buildMid(){SILENT=true;S=fresh();const R=mulberry(7);
+ S.role='admin';A.generate();A.suggest('all');drill('IT-DH-Y').planned='2026-04-14';unitIds().forEach(u=>A.submit(u));
+ S.demoDate='2025-12-22';S.role='oemc';unitIds().forEach(u=>A.approve(u));S.role='admin';S.demoDate='2025-12-28';A.sendMOH();
+ const today='2026-07-15';const okDay=c=>dow(c)<5&&!holiday(c);
+ const past=S.drills.filter(d=>d.current<today).sort((a,b)=>a.current<b.current?-1:1);
+ for(const d of past){const r=R();
+  if(r<.07){let to=null;for(let k=2;k<14;k++){const c=addDays(d.current,k);if(c<=d.end&&c<today&&okDay(c)){to=c;break}}
+   if(to){S.demoDate=addDays(d.current,-6);S.role='proponent';S.dept=d.dept;
+    if(A.requestChange(d.id,to,REASONS[r<.035?0:2],'Department asked to move it','change')){S.role='oemc';A.decide(S.changes[0].id,true,'')}}}
+  S.role='admin';S.demoDate=d.current;
+  if(r>.955){A.record(d.id,'Not completed','Too few staff released from the unit');
+   if(r>.975){let to=null;for(let k=3;k<20;k++){const c=addDays(d.notDoneDate,k);if(c.slice(0,7)===d.notDoneDate.slice(0,7)&&c<today&&okDay(c)){to=c;break}}
+    if(to){S.role='proponent';S.dept=d.dept;if(A.requestChange(d.id,to,'Drill not completed - redo','Redo agreed with the unit','redo')){S.role='oemc';A.decide(S.changes[0].id,true,'');S.role='admin';S.demoDate=to;A.record(d.id,'Completed')}}}}
+  else A.record(d.id,'Completed')}
+ /* Step 2 history: an approved script and a drill-day record for every drill already held */
+ const R2=mulberry(11);
+ S.drills.forEach(d=>{const ran=d.doneDate||d.notDoneDate;if(!ran)return;S.demoDate=addDays(d.original,-S.settings.scriptLead);d.script=newScript(d);fillTemplate(d);
+  const s=d.script,r=R2(),late=r<.12,two=r<.3;s.due=addDays(d.original,-S.settings.scriptDue);s.submittedAt=addDays(d.original,late?-9:-20);s.status='Approved';
+  if(two)s.rounds.push({at:addDays(s.submittedAt,2),by:OEMC,decision:'Returned',comment:'Add the expected action for each event and name the observer.'});
+  s.approvedAt=addDays(s.submittedAt,two?6:3);s.rounds.push({at:s.approvedAt,by:OEMC,decision:'Approved',comment:''});
+  d.history.push({at:s.submittedAt,who:dept(d.dept).head,text:'Script submitted to OEMC'},{at:s.approvedAt,who:OEMC,text:`Script approved (round ${s.rounds.length})`});
+  const pool=STAFF.filter(x=>x.area===d.area),n=Math.min(pool.length,6+Math.floor(R2()*10)),ps=new Set();while(ps.size<n)ps.add(pool[Math.floor(R2()*pool.length)].badge);
+  const checks={},findings=[],failed=!d.doneDate||d.doneDate!==ran;
+  checklist(d.code).forEach(sec=>sec.items.forEach(it=>{const x=R2();const v=x<.82?'Met':x<.94?'Partly':x<.985?'Not met':'N/A';checks[it.k]={v,note:''};
+   if(v==='Not met'||(v==='Partly'&&R2()<.4)){const ty=sec.sec==='Communication'?'Communication':sec.sec==='Safety'?'Facility':sec.sec==='Response'?(R2()<.5?'Staff / training':'Equipment'):'Policy / procedure';
+    checks[it.k].note='See findings';findings.push({text:`${it.t}: ${v==='Not met'?'not done':'only partly done'}`,type:ty,gap:v==='Not met'||R2()<.5})}}));
+  d.run={observer:OBSERVER,start:'09:00',end:'09:'+pad(20+Math.floor(R2()*30)),checks,participants:[...ps],findings,result:d.status==='Completed'?'Completed':'Not completed',date:d.doneDate||ran};
+  if(failed&&d.notDoneDate)d.prevRun={...d.run,result:'Not completed',date:d.notDoneDate}});
+ const gas=drill('IT-DH-Y');if(gas.run){gas.run.findings.unshift({text:'Radio not transmitting from the nurse station to the facilities control room; the nurse had to walk to the next unit to call',type:'Facility',gap:true});gas.run.checks.i7={v:'Not met',note:'Radio failed at the nurse station'}}
+ /* Step 3 history: reports with dated signatures, gaps with closures, escalations and Datix referrals */
+ const R3=mulberry(23),at=(dt)=>`${dt} ${pad(8+Math.floor(R3()*9))}:${pad(Math.floor(R3()*60))}`;
+ S.drills.filter(d=>d.run&&d.run.result==='Completed').sort((a,b)=>a.run.date<b.run.date?-1:1).forEach(d=>{S.demoDate=d.run.date;d.aar=newAAR(d);const a=d.aar;
+  a.objectives.forEach(o=>{const x=R3();o.rating=x<.75?'Met':x<.95?'Partly met':'Not met'});if(!a.strengths.length)a.strengths=['Staff knew their roles'];
+  const steps=[addDays(d.run.date,4+Math.floor(R3()*12)+(R3()<.08?8:0))];for(let i=1;i<4;i++)steps.push(addDays(steps[i-1],1+Math.floor(R3()*3)));
+  a.reminders=[7,14].filter(n=>addDays(a.created,n)<=steps[0]&&addDays(a.created,n)<=today);
+  const ret=R3()<.06&&steps[3]<=today;if(ret){a.returns.push({at:addDays(steps[0],1),by:reviewerName(d),comment:'Rate objective 2 and add the owner for each improvement.'});steps.forEach((s,i)=>steps[i]=addDays(s,4))}
+  steps.forEach((s,i)=>{if(s<=today){const st=AAR_STEPS[i];a.sigs.push({step:st[0],by:i===0?`${dept(d.dept).head} (${dept(d.dept).name})`:i===1?reviewerName(d):i===2?OEMC:DOM,at:at(s)});a.status=st[0];
+   d.history.push({at:s,who:a.sigs[i].by,text:`Report signed: ${st[1]}`})}});
+  if(a.status==='Approved'&&steps[3]<'2026-07-01'){S.demoDate=steps[3];makeGaps(d,steps[3])}});
+ /* Recent reports: show every signature state, and one returned */
+ S.drills.filter(d=>d.aar&&d.aar.status==='Approved'&&d.aar.sigs[3].at>='2026-07-01').sort((a,b)=>a.aar.sigs[3].at<b.aar.sigs[3].at?1:-1).forEach((d,i)=>{const a=d.aar;
+  if(i<4){const keep=[1,2,3,0][i];a.sigs=a.sigs.slice(0,keep);a.status=keep?AAR_STEPS[keep-1][0]:'Returned';d.history=d.history.filter(h=>!h.text.startsWith('Report signed')||a.sigs.some(s=>h.text.endsWith(AAR_STEPS[a.sigs.indexOf(s)][1])));
+   if(!keep){a.returns.push({at:addDays(today,-1),by:OEMC,comment:'Objective 2 is rated Met but the checklist shows the code team arrived late. Please check the rating.'});d.history.push({at:addDays(today,-1),who:OEMC,text:'Report returned'})}}
+  else{S.demoDate=a.sigs[3].at.slice(0,10);makeGaps(d,S.demoDate)}});
+ for(let i=0;i<45;i++){const[t,ty]=LEGACY_GAPS[i%LEGACY_GAPS.length],ar=AREAS[Math.floor(R3()*AREAS.length)].id,c=CODES[Math.floor(R3()*CODES.length)].id,cr=addDays('2025-06-01',Math.floor(R3()*200));
+  S.gaps.push({id:'G-'+String(++S.gseq).padStart(3,'0'),drill:`${c}-${ar}-2025`,code:c,area:ar,text:t,type:ty,owner:defaultOwner(ty,{area:ar,dept:proponentFor(c,ar)}),created:cr,due:addDays(cr,GAP_DAYS[ty]),
+   status:'Open',closedAt:null,esc:0,maint:ty==='Facility'?{no:'PM-'+(10003000+i),status:'Sent to SAP PM'}:null,datix:null,notes:[{at:cr,who:'System',text:'Carried over from the 2025 drill programme'}],legacy:true})}
+ S.gaps.forEach(g=>{const age=diffDays(g.created,today),x=R3(),p=g.legacy?.72:Math.min(.92,.12+age/150);
+  if(x<p){const span=Math.max(5,Math.min(age,diffDays(g.created,g.due)+(R3()<.3?40:0)));g.closedAt=addDays(g.created,3+Math.floor(R3()*span));if(g.closedAt>today)g.closedAt=today;g.status='Closed';if(g.maint)g.maint.status='Completed'}
+  else if(R3()<.55){g.status='In progress';g.notes.push({at:addDays(g.created,Math.min(age,6)),who:dept(g.owner).head,text:'In progress: action plan agreed'});if(g.maint)g.maint.status='In process'}
+  const end=g.closedAt||today;[30,60,90].forEach((n,i)=>{if(addDays(g.created,n)<=end){g.esc=i+1;g.notes.push({at:addDays(g.created,n),who:'System',text:`Escalated: ${ESC[i+1]}`})}});
+  if(g.due<end){g.datix='DX-'+g.due.slice(0,4)+'-'+String(4100+ +g.id.slice(2));g.notes.push({at:addDays(g.due,1),who:'System',text:`Overdue: sent to Datix as ${g.datix} (mock)`})}
+  if(g.closedAt)g.notes.push({at:g.closedAt,who:dept(g.owner).head,text:'Closed: action completed and checked by EPPU'});g.notes.sort((a,b)=>a.at<b.at?-1:1)});
+ const rg=S.gaps.find(g=>g.text.startsWith('Radio not transmitting'));if(rg){rg.status='In progress';rg.closedAt=null;rg.maint={no:rg.maint?rg.maint.no:'PM-10004999',status:'In process'};
+  rg.notes=rg.notes.filter(n=>!n.text.startsWith('Closed')&&!n.text.startsWith('In progress'));rg.notes.push({at:addDays(rg.created,5),who:dept(rg.owner).head,text:'In progress: radio vendor visit booked, repeater on level 4 suspected'})}
+ S.demoDate=today;
+ const fut=S.drills.filter(d=>d.status==='Scheduled'&&d.current>addDays(today,5)).sort((a,b)=>a.current<b.current?-1:1);
+ [0,7,15,24].forEach((i,j)=>{const d=fut[i];if(!d)return;let to=null;for(let k=3;k<20;k++){const c=addDays(d.current,k);if(c<=d.end&&okDay(c)){to=c;break}}
+  if(to){S.role='proponent';S.dept=d.dept;A.requestChange(d.id,to,REASONS[[1,3,4,0][j]],['Two nurses on leave that week','Fire panel upgrade in that wing','CPH asked for the week after','High census expected'][j],'change')}});
+ /* Upcoming scripts in every state, incl. a Code Pink script whose event list contradicts the story */
+ S.demoDate=addDays(today,-3);tick();S.demoDate=today;tick();
+ const up=S.drills.filter(d=>d.script&&d.script.status==='Requested').sort((a,b)=>eff(a)<eff(b)?-1:1);
+ up.forEach((d,i)=>{if(i%5===4)return;fillTemplate(d);const s=d.script;
+  if(i<4){s.status='Approved';s.submittedAt=addDays(today,-9);s.approvedAt=addDays(today,-6);s.rounds.push({at:s.approvedAt,by:OEMC,decision:'Approved',comment:''})}
+  else if(i<8){s.status='Submitted';s.submittedAt=addDays(today,-1);s.warnings=checkScript(d).w}
+  else if(i===8){s.status='Returned';s.submittedAt=addDays(today,-6);s.rounds.push({at:addDays(today,-2),by:OEMC,decision:'Returned',comment:'Objective 3 is not tested by any event. Add an event for it.'})}
+  else s.status='Draft'});
+ const pk=S.drills.filter(d=>d.code==='PINK'&&d.status==='Scheduled'&&eff(d)>today).sort((a,b)=>eff(a)<eff(b)?-1:1)[0];
+ if(pk){S.demoDate=today;if(!pk.script)pk.script=newScript(pk);fillTemplate(pk);const ev=pk.script.events[2],m=ev.event.match(/(\d+)-year-old (girl|boy)/);
+  ev.event=ev.event.replace(m[0],`${+m[1]+1}-year-old ${m[2]==='girl'?'boy':'girl'}`);const s=pk.script;s.status='Submitted';s.submittedAt=addDays(today,-1);s.warnings=checkScript(pk).w;
+  pk.history.push({at:s.submittedAt,who:dept(pk.dept).head,text:`Script submitted to OEMC with ${s.warnings.length} warning(s)`})}
+ S.role='admin';S.dept='SFP';SILENT=false;return S}
+
+/* ---------- Rendering helpers ---------- */
+const STC={Open:'c-grey','Date proposed':'c-info',Submitted:'c-pur',Scheduled:'c-ok','Change pending':'c-warn','Redo required':'c-err',Completed:'c-ok',
+ Draft:'c-grey',Returned:'c-err',Approved:'c-ok',Pending:'c-warn',Rejected:'c-err','Not started':'c-grey','Collecting dates':'c-info','In approval':'c-pur','Sent to MOH & MSMD':'c-ok'};
+const chip=s=>`<span class="chip ${STC[s]||'c-grey'}">${esc(s)}</span>`;
+const cdot=c=>`<span class="dot" style="background:${code(c).color}"></span>`;
+const pct=(a,b)=>b?Math.floor(a*100/b)+'%':'—';
+function kpi(){const ds=S.drills,due=ds.filter(d=>eff(d)&&eff(d)<=S.demoDate&&d.original),comp=ds.filter(d=>d.status==='Completed');
+ const held=comp.filter(d=>d.doneDate===d.original).length;
+ const required=ds.length||CODES.reduce((n,c)=>n+AREAS.reduce((m,a)=>m+periods(S.freq[c.id][a.id]).length,0),0);
+ return{required,dated:ds.filter(d=>d.planned).length,approved:ds.filter(d=>d.original).length,due:due.length,comp:comp.length,held,
+  pend:S.changes.filter(c=>c.status==='Pending').length,appr:S.changes.filter(c=>c.status==='Approved').length,
+  redo:ds.filter(d=>d.status==='Redo required'||(d.status==='Change pending'&&d.notDoneDate&&!d.redo)).length,
+  ...(()=>{const ap=ds.filter(d=>d.script&&d.script.status==='Approved'),onT=ap.filter(d=>d.script.approvedAt<=d.script.due).length,
+   rounds=ap.reduce((n,d)=>n+d.script.rounds.length,0),seen=new Set();ds.forEach(d=>[d.run,d.prevRun].forEach(r=>r&&r.result&&r.participants.forEach(b=>seen.add(b))));
+   return{sAppr:ap.length,sOnTime:onT,sRounds:ap.length?(rounds/ap.length).toFixed(1):'—',sOpen:ds.filter(d=>d.script&&d.script.status!=='Approved').length,
+    sLate:ds.filter(d=>d.script&&d.script.status!=='Approved'&&d.script.due<S.demoDate).length,staffIn:seen.size}})(),
+  ...(()=>{const ar=ds.filter(d=>d.aar),prep=ar.filter(d=>d.aar.sigs.length),onT=prep.filter(d=>d.aar.sigs[0].at.slice(0,10)<=d.aar.due).length,
+   lateOpen=ar.filter(d=>!d.aar.sigs.length&&d.aar.due<S.demoDate).length,fin=ar.filter(d=>d.aar.status==='Approved'),
+   days=fin.length?Math.round(fin.reduce((n,d)=>n+diffDays(d.run.date,d.aar.sigs[3].at.slice(0,10)),0)/fin.length):'—',
+   G=S.gaps,closed=G.filter(g=>g.status==='Closed').length,open=G.filter(g=>g.status!=='Closed'),over=open.filter(g=>g.due<S.demoDate);
+   return{aAll:ar.length,aOnTime:onT,aBase:prep.length+lateOpen,aLate:lateOpen,aFinal:fin.length,aDays:days,gAll:G.length,gClosed:closed,gOpen:open.length,gOver:over.length,gL3:open.filter(g=>g.esc>=3).length}})()}}
+function counts(){const sc=S.drills.filter(d=>d.script&&(S.role==='oemc'?d.script.status==='Submitted':S.role==='proponent'?d.dept===S.dept&&['Requested','Draft','Returned'].includes(d.script.status):false)).length;
+ return{appr:S.role==='oemc'?unitIds().filter(u=>unit(u).status==='Submitted').length+S.changes.filter(c=>c.status==='Pending').length:0,scripts:sc,
+  day:S.role==='observer'?S.drills.filter(canRun).length:0,
+  reports:S.drills.filter(d=>d.aar&&canSignAAR(d)&&(S.role!=='admin')).length,
+  gaps:S.role==='owner'?S.gaps.filter(g=>g.owner===S.dept&&g.status!=='Closed').length:0}}
+
+/* ---------- Pages ---------- */
+function pOverview(){const k=kpi(),todo=[];
+ if(S.role==='admin'){
+  if(S.planStatus==='Not started')todo.push([`Generate the ${YEAR} drill slots from the frequency rules (${k.required} drills).`,`<button class="btn primary" onclick="A.generate()">Generate ${YEAR} slots</button>`]);
+  const open=S.drills.filter(d=>!d.planned).length;
+  if(open)todo.push([`${open} slots have no date yet. Proponents pick dates by ${fmt(S.settings.pickDeadline)}. For the demo you can fill the rest.`,`<button class="btn" onclick="A.go('plan')">Open plan</button> <button class="btn primary" onclick="A.suggest('all')">Suggest dates for all</button>`]);
+  unitIds().filter(u=>['Draft','Returned'].includes(unit(u).status)&&S.drills.some(d=>unitOf(d)===u)&&S.drills.filter(d=>unitOf(d)===u).every(d=>d.planned))
+   .forEach(u=>todo.push([`${unitName(u)} is ready for OEMC${unit(u).status==='Returned'?' (was returned: '+esc(unit(u).comment)+')':''}.`,`<button class="btn primary" onclick="A.submit('${u}')">Submit</button>`]));
+  if(S.planStatus==='Approved')todo.push(['The whole plan is approved. Send the copy to MOH and Aramco MSMD.',`<button class="btn primary" onclick="A.go('moh')">Review and send</button>`]);
+  if(k.sLate)todo.push([`${k.sLate} drill scripts are past their due date and not approved yet.`,`<button class="btn" onclick="A.go('scripts')">Open scripts</button>`]);
+  const rec=S.drills.filter(isDue).length;if(rec)todo.push([`${rec} drills have reached their date without a drill-day record. Observers record them on the Drill day page.`,`<button class="btn" onclick="A.go('day')">Drill day</button>`])}
+ if(S.role==='observer'){const due=S.drills.filter(isDue);due.forEach(d=>todo.push([`${cdot(d.code)}<b>${d.id}</b> ${code(d.code).name} in ${area(d.area).name} was due ${fmtd(d.current)}.${scriptOk(d)?'':' <span class="e">Script not approved.</span>'}`,`<button class="btn primary" onclick="A.openRun('${d.id}')" ${scriptOk(d)?'':'disabled'}>Open drill day</button>`]));
+  if(!due.length)todo.push([`No drill is due today. Move the demo date to a drill date, or load the mid-year example.`,`<button class="btn" onclick="A.go('day')">Upcoming drills</button>`])}
+ if(S.role==='proponent'){const mine=S.drills.filter(d=>d.dept===S.dept);
+  const op=mine.filter(d=>canEditDate(d)&&!d.planned).length;if(op)todo.push([`Pick dates for ${op} of your drills.`,`<button class="btn" onclick="A.go('plan')">Open my drills</button> <button class="btn primary" onclick="A.suggest('mine')">Suggest dates</button>`]);
+  const rd=mine.filter(d=>d.status==='Redo required');rd.forEach(d=>todo.push([`${d.id} was not completed on ${fmt(d.notDoneDate)}. Request a redo date in the same month.`,`<button class="btn primary" onclick="A.modal('redo','${d.id}')">Request redo</button>`]));
+  mine.filter(d=>canEditScript(d)).forEach(d=>todo.push([`Script for <b>${d.id}</b> (${fmt(eff(d))}) is ${d.script.status.toLowerCase()}, due ${fmt(d.script.due)}${d.script.due<S.demoDate?' <span class="e">overdue</span>':''}.`,`<button class="btn primary" onclick="A.openScript('${d.id}')">${d.script.status==='Requested'?'Write script':'Open script'}</button>`]));
+  if(!mine.length)todo.push(['This department is not a proponent for any drill. Pick another department in the header.',''])}
+ if(S.role==='oemc'){unitIds().filter(u=>unit(u).status==='Submitted').forEach(u=>todo.push([`${unitName(u)} is waiting for your approval.`,`<button class="btn primary" onclick="A.go('approvals')">Review</button>`]));
+  const p=S.changes.filter(c=>c.status==='Pending').length;if(p)todo.push([`${p} change request(s) waiting for a decision.`,`<button class="btn primary" onclick="A.go('approvals')">Review</button>`]);
+  S.drills.filter(d=>d.script&&d.script.status==='Submitted').forEach(d=>todo.push([`Script for <b>${d.id}</b> (${fmt(eff(d))}) is waiting for review.${d.script.warnings.length?` <span class="w">⚠ ${d.script.warnings.length} warning(s)</span>`:''}`,`<button class="btn primary" onclick="A.openScript('${d.id}')">Review script</button>`]))}
+ /* Step 3 to-dos */
+ S.drills.filter(d=>d.aar&&canSignAAR(d)&&S.role!=='admin'&&(S.role!=='proponent'||d.dept===S.dept)).forEach(d=>{const st=nextStep(d.aar);
+  todo.push([`After Action Report <b>${d.id}</b> (drill ${fmt(d.run.date)}): ${st[2]==='proponent'?`${d.aar.status==='Returned'?'returned, fix and ':''}prepare and sign, due ${fmt(d.aar.due)}${d.aar.due<S.demoDate?' <span class="e">overdue</span>':''}`:`waiting for your signature (${st[1]})`}.`,
+   `<button class="btn primary" onclick="A.openAAR('${d.id}')">${st[2]==='proponent'?'Open report':'Review and sign'}</button>`])});
+ if(S.role==='owner'){const mg=S.gaps.filter(g=>g.owner===S.dept&&g.status!=='Closed'),ov=mg.filter(g=>g.due<S.demoDate);
+  if(mg.length)todo.push([`${mg.length} open gap(s) for ${esc(dept(S.dept).name)}${ov.length?`, <span class="e">${ov.length} overdue</span>`:''}.`,`<button class="btn primary" onclick="UI.gf={status:'open',type:'',owner:'${S.dept}',q:''};A.go('gaps')">Open my gaps</button>`]);
+  else todo.push(['No open gaps for this department. Pick another department in the header.',''])}
+ if(S.role==='admin'){if(k.aLate)todo.push([`${k.aLate} After Action Report(s) are past due and not signed.`,`<button class="btn" onclick="UI.rf='late';A.go('reports')">Open reports</button>`]);
+  if(k.gL3)todo.push([`${k.gL3} gap(s) open more than 90 days, escalated to executives.`,`<button class="btn" onclick="UI.gf={status:'open',type:'',owner:'',q:'',esc:'3'};A.go('gaps')">Open gaps</button>`])}
+ const heat=AREAS.map(a=>{const row=MON.map((m,i)=>S.drills.filter(d=>d.area===a.id&&eff(d)&&+eff(d).slice(5,7)===i+1).length);return[a.id,row]});
+ const mx=Math.max(1,...heat.flatMap(h=>h[1]));
+ return`<h1>Drill plan ${YEAR}</h1><p class="sub">Status ${chip(S.planStatus)} · Viewing as <b>${esc(me())}</b> · Demo date ${fmtd(S.demoDate)}</p>
+ <div class="banner noprint"><div><b>Two starting points.</b> <span class="muted">Planning starts on 1 Dec 2025 with an empty year. Mid-year jumps to 15 Jul 2026 with an approved plan, finished drills, changes and redos.</span></div><div class="row"><button class="btn sm" onclick="A.reset('fresh')">Start planning</button><button class="btn sm" onclick="A.reset('mid')">Load mid-year</button><button class="btn sm" onclick="A.go('guide')">How to use</button></div></div>
+ <div class="kpis">
+  <div class="tile"><div class="k">Required by rules</div><div class="v">${k.required}</div><div class="h">mandatory drills in ${YEAR}</div></div>
+  <div class="tile"><div class="k">Planned vs required</div><div class="v">${pct(k.dated,k.required)}</div><div class="h">${k.dated} have a date · ${k.approved} approved</div></div>
+  <div class="tile ${k.due&&k.comp/k.due<.9?'bad':''}"><div class="k">Done vs planned to date</div><div class="v">${pct(k.comp,k.due)}</div><div class="h">${k.comp} of ${k.due} due by ${fmt(S.demoDate)}</div></div>
+  <div class="tile ${k.comp?(k.held/k.comp>=.9?'good':'bad'):''}"><div class="k">Held on approved date</div><div class="v">${pct(k.held,k.comp)}</div><div class="h">target above 90%</div></div>
+  <div class="tile"><div class="k">Change requests</div><div class="v">${k.pend}</div><div class="h">pending · ${k.appr} approved</div></div>
+  <div class="tile ${k.redo?'bad':''}"><div class="k">Redo outstanding</div><div class="v">${k.redo}</div><div class="h">not completed, redo in same month</div></div>
+  <div class="tile ${k.sAppr?(k.sOnTime/k.sAppr>=.9?'good':'bad'):''}"><div class="k">Scripts approved on time</div><div class="v">${pct(k.sOnTime,k.sAppr)}</div><div class="h">${k.sAppr} approved · ${k.sRounds} review rounds on average</div></div>
+  <div class="tile"><div class="k">Staff in at least 1 drill</div><div class="v">${pct(k.staffIn,STAFF.length)}</div><div class="h">${k.staffIn} of ${STAFF.length} staff</div></div>
+  <div class="tile ${k.aBase?(k.aOnTime/k.aBase>=.9?'good':'bad'):''}"><div class="k">Reports on time</div><div class="v">${pct(k.aOnTime,k.aBase)}</div><div class="h">signed within ${S.settings.aarDue} days · ${k.aDays} days to final approval</div></div>
+  <div class="tile ${k.gAll?(k.gClosed/k.gAll>=.8?'good':'bad'):''}"><div class="k">Gaps closed</div><div class="v">${pct(k.gClosed,k.gAll)}</div><div class="h">target above 80% · ${k.gOver} overdue</div></div>
+ </div>
+ <div class="card"><h2>Your to-do</h2><div class="todo">${todo.length?todo.map(([t,b])=>`<div class="it"><div>${t}</div><div class="row">${b}</div></div>`).join(''):'<div class="muted">Nothing waiting for you. Try another role in the header.</div>'}</div></div>
+ <div class="grid2"><div class="card"><h2>Progress by ${S.settings.approvalMode==='area'?'area':'plan'}</h2><div class="tbl"><table><thead><tr><th>Area</th><th>Drills</th><th>Dated</th><th>Warnings</th><th>Approval</th></tr></thead><tbody>
+ ${AREAS.map(a=>{const ds=S.drills.filter(d=>d.area===a.id);return`<tr><td><b>${a.id}</b> <span class="muted">${a.name}</span></td><td>${ds.length}</td><td>${ds.filter(d=>d.planned).length}</td><td>${ds.filter(d=>warns(d).length).length||''}</td><td>${chip(unit(S.settings.approvalMode==='area'?a.id:'ALL').status)}</td></tr>`}).join('')}
+ </tbody></table></div></div>
+ <div class="card"><h2>Drills per month</h2><div class="tbl"><table class="heat"><thead><tr><th>Area</th>${MON.map(m=>`<th>${m[0]}</th>`).join('')}</tr></thead><tbody>
+ ${heat.map(([a,r])=>`<tr><td><b>${a}</b></td>${r.map(n=>`<td style="background:rgba(42,102,221,${n?(.08+.6*n/mx).toFixed(2):0});color:${n/mx>.6?'#fff':'inherit'}">${n||''}</td>`).join('')}</tr>`).join('')}
+ </tbody></table></div><p class="muted" style="font-size:13px;margin:8px 0 0">Counts by current date. Watch for crowded months such as the Ramadan and Eid weeks.</p></div></div>`}
+
+function filtered(){const f=UI.f;return S.drills.filter(d=>(!f.area||d.area===f.area)&&(!f.code||d.code===f.code)&&
+ (!f.month||(eff(d)||d.start).slice(5,7)===f.month)&&(!f.status||(f.status==='Warnings'?warns(d).length:f.status==='Due'?isDue(d):d.status===f.status))&&
+ (!(S.role==='proponent'&&f.mine)||d.dept===S.dept)&&(!f.q||(d.id+' '+dept(d.dept).name).toLowerCase().includes(f.q.toLowerCase())))
+ .sort((a,b)=>a.area.localeCompare(b.area)||((eff(a)||a.start)<(eff(b)||b.start)?-1:1))}
+function pPlan(){if(S.planStatus==='Not started')return`<h1>Annual plan</h1><div class="card">The ${YEAR} plan has not been generated yet. ${S.role==='admin'?`<button class="btn primary" onclick="A.generate()">Generate ${YEAR} slots</button>`:'Switch to the EPPU admin role to generate it.'}</div>`;
+ const f=UI.f,sel=(k,opts,lbl)=>`<select onchange="UI.f.${k}=this.value;renderTable()"><option value="">${lbl}</option>${opts.map(([v,t])=>`<option value="${v}" ${f[k]===v?'selected':''}>${t}</option>`).join('')}</select>`;
+ return`<h1>${S.role==='proponent'&&f.mine?'My drills':'Annual plan'} ${YEAR}</h1>
+ <p class="sub">Each row is one mandatory drill created from the frequency rules. ${S.role==='proponent'?'Pick a date inside the required period. The app warns about weekends, holidays, clashes and crowded weeks.':'Click a row to open the record.'}</p>
+ <div class="filters noprint">${sel('area',AREAS.map(a=>[a.id,a.id+' · '+a.name]),'All areas')}${sel('code',CODES.map(c=>[c.id,c.name]),'All codes')}
+ ${sel('month',MON.map((m,i)=>[pad(i+1),m]),'All months')}${sel('status',['Open','Date proposed','Submitted','Scheduled','Change pending','Redo required','Completed','Warnings','Due'].map(s=>[s,s==='Due'?'Due for outcome':s==='Warnings'?'With warnings':s]),'All statuses')}
+ <input placeholder="Search ID or department" value="${esc(f.q)}" oninput="UI.f.q=this.value;renderTable()">
+ ${S.role==='proponent'?`<label class="row" style="gap:6px"><input type="checkbox" ${f.mine?'checked':''} onchange="UI.f.mine=this.checked;render()"> Only my department</label>`:''}
+ ${S.drills.some(canEditDate)?`<button class="btn" onclick="A.suggest('${S.role==='admin'?'all':'mine'}')">Suggest dates for open slots</button>`:''}</div>
+ <div id="tbl"></div>`}
+function renderTable(){const el=document.getElementById('tbl');if(!el)return;const rows=filtered();
+ el.innerHTML=`<div class="muted" style="font-size:13px;margin-bottom:6px">${rows.length} drills</div><div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Required period</th><th>Proponent</th><th>Date</th><th>Original approved</th><th>Status</th><th>Script</th><th></th></tr></thead><tbody>
+ ${rows.map(d=>{const w=warns(d);return`<tr class="click" onclick="A.open('${d.id}')"><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${d.area}</td>
+ <td>${d.label}${d.shift?' · '+d.shift:''}</td><td>${esc(dept(d.dept).name)}</td>
+ <td onclick="event.stopPropagation()">${canEditDate(d)?`<input type="date" min="${d.start}" max="${d.end}" value="${d.planned||''}" onchange="A.setDate('${d.id}',this.value)">`:fmtd(eff(d))}${w.length?` <span class="w" title="${esc(w.join('\n'))}">⚠ ${w.length}</span>`:''}</td>
+ <td>${d.original?(d.original!==d.current?`<s class="muted">${fmt(d.original)}</s>`:fmt(d.original)):'—'}</td><td>${chip(d.status)}</td><td>${d.script?chip(d.script.status):''}</td>
+ <td onclick="event.stopPropagation()">${canRun(d)?`<button class="btn sm primary" onclick="A.openRun('${d.id}')">Drill day</button>`:canChange(d)?`<button class="btn sm" onclick="A.modal('${d.status==='Redo required'?'redo':'change'}','${d.id}')">${d.status==='Redo required'?'Redo':'Change'}</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No drills match the filters.</td></tr>'}
+ </tbody></table></div>`}
+
+function pApprovals(){const pend=S.changes.filter(c=>c.status==='Pending');
+ return`<h1>Approvals</h1><p class="sub">OEMC approves the plan ${S.settings.approvalMode==='area'?'area by area (setting)':'as one package (setting)'} and decides every change request. EPPU submits each part once all its drills have a date.</p>
+ <div class="card"><h2>Plan approval</h2>${S.planStatus==='Not started'?'<p class="muted">The plan has not been generated yet.</p>':`<div class="tbl"><table><thead><tr><th>Part</th><th>Drills</th><th>Dated</th><th>With warnings</th><th>Status</th><th class="wrap">Comment</th><th></th></tr></thead><tbody>
+ ${unitIds().map(u=>{const ds=S.drills.filter(d=>unitOf(d)===u),st=unit(u).status;return`<tr><td><b>${unitName(u)}</b></td><td>${ds.length}</td><td>${ds.filter(d=>d.planned).length}</td><td>${ds.filter(d=>warns(d).length).length}</td><td>${chip(st)}</td><td class="wrap">${esc(unit(u).comment||'')}</td>
+ <td>${S.role==='admin'&&['Draft','Returned'].includes(st)?`<button class="btn sm primary" onclick="A.submit('${u}')" ${ds.every(d=>d.planned)?'':'disabled'}>Submit</button>`:''}
+ ${S.role==='oemc'&&st==='Submitted'?`<button class="btn sm ok" onclick="A.approve('${u}')">Approve</button> <button class="btn sm danger" onclick="A.modal('return','${u}')">Return</button> <button class="btn sm" onclick="UI.f={area:'${u==='ALL'?'':u}',code:'',month:'',status:'',q:'',mine:false};A.go('plan')">View drills</button>`:''}</td></tr>`}).join('')}
+ </tbody></table></div>`}</div>
+ <div class="card"><h2>Change requests waiting (${pend.length})</h2>${pend.length?changeTable(pend,S.role==='oemc'):'<p class="muted">None.</p>'}</div>`}
+function changeTable(list,act){return`<div class="tbl"><table><thead><tr><th>Request</th><th>Drill</th><th>Type</th><th>From</th><th>To</th><th class="wrap">Reason</th><th>Warnings</th><th>Requested</th><th>Status</th>${act?'<th></th>':''}</tr></thead><tbody>
+ ${list.map(c=>`<tr><td class="mono">${c.id}</td><td class="mono"><a href="#" onclick="A.open('${c.drill}');return false">${c.drill}</a></td><td>${c.type==='redo'?'Redo':'Reschedule'}</td><td>${fmtd(c.from)}</td><td>${fmtd(c.to)}</td>
+ <td class="wrap">${esc(c.reason)}${c.comment?`<div class="muted" style="font-size:13px">${esc(c.comment)}</div>`:''}${c.decision?`<div class="muted" style="font-size:13px">OEMC: ${esc(c.decision)}</div>`:''}</td>
+ <td>${c.warnings.length?`<span class="w" title="${esc(c.warnings.join('\n'))}">⚠ ${c.warnings.length}</span>`:''}</td><td>${fmt(c.at)}<div class="muted" style="font-size:12.5px">${esc(c.by.split(' (')[0])}</div></td><td>${chip(c.status)}</td>
+ ${act?`<td>${c.status==='Pending'?`<button class="btn sm ok" onclick="A.decide('${c.id}',true,'')">Approve</button> <button class="btn sm danger" onclick="A.modal('reject','${c.id}')">Reject</button>`:''}</td>`:''}</tr>`).join('')}</tbody></table></div>`}
+function pChanges(){const k=kpi();const byR={};S.changes.forEach(c=>byR[c.reason]=(byR[c.reason]||0)+1);
+ return`<h1>Change control</h1><p class="sub">After approval, a drill moves only through a change request approved by OEMC. The original approved date is never overwritten, so "held on approved date" can be measured. A drill that was not completed must be redone in the same month.</p>
+ <div class="kpis"><div class="tile ${k.comp?(k.held/k.comp>=.9?'good':'bad'):''}"><div class="k">Held on approved date</div><div class="v">${pct(k.held,k.comp)}</div><div class="h">${k.held} of ${k.comp} completed drills</div></div>
+ <div class="tile"><div class="k">Requests</div><div class="v">${S.changes.length}</div><div class="h">${k.pend} pending · ${k.appr} approved · ${S.changes.filter(c=>c.status==='Rejected').length} rejected</div></div>
+ <div class="tile"><div class="k">Redos</div><div class="v">${S.changes.filter(c=>c.type==='redo').length}</div><div class="h">requested after not completed</div></div></div>
+ ${Object.keys(byR).length?`<div class="card"><h2>Requests by reason</h2>${Object.entries(byR).sort((a,b)=>b[1]-a[1]).map(([r,n])=>`<div class="row" style="gap:10px;margin:4px 0"><div style="width:240px">${esc(r)}</div><div style="height:12px;border-radius:3px;background:var(--blue);width:${n*24}px"></div><span class="mono">${n}</span></div>`).join('')}</div>`:''}
+ <div class="card"><h2>All requests</h2>${S.changes.length?changeTable(S.changes,S.role==='oemc'):'<p class="muted">No change requests yet. Open an approved drill and choose "Request change".</p>'}</div>`}
+
+/* ---------- Step 2 pages: scripts (UC4) ---------- */
+function pScripts(){const sf=UI.sf||'all',all=S.drills.filter(d=>d.script&&(S.role!=='proponent'||!UI.f.mine||d.dept===S.dept)),k=kpi();
+ const F={all:['All',()=>true],write:['To write',d=>['Requested','Draft','Returned'].includes(d.script.status)],review:['In review',d=>d.script.status==='Submitted'],
+  ok:['Approved',d=>d.script.status==='Approved'],late:['Overdue',d=>d.script.status!=='Approved'&&d.script.due<S.demoDate]};
+ const rows=all.filter(F[sf][1]).sort((a,b)=>eff(a)<eff(b)?-1:1);
+ return`<h1>Drill scripts</h1><p class="sub">The app asks the proponent for a script ${S.settings.scriptLead} days before each approved drill (setting). The script is due ${S.settings.scriptDue} days before the drill and needs OEMC approval. Each script has a story, objectives, roles and a minute-by-minute event list.</p>
+ <div class="kpis"><div class="tile ${k.sAppr?(k.sOnTime/k.sAppr>=.9?'good':'bad'):''}"><div class="k">Approved on time</div><div class="v">${pct(k.sOnTime,k.sAppr)}</div><div class="h">${k.sOnTime} of ${k.sAppr} approved by the due date</div></div>
+ <div class="tile"><div class="k">Review rounds</div><div class="v">${k.sRounds}</div><div class="h">average per approved script</div></div>
+ <div class="tile ${k.sLate?'bad':''}"><div class="k">Overdue</div><div class="v">${k.sLate}</div><div class="h">past due, not approved</div></div></div>
+ <div class="tabs">${Object.entries(F).map(([key,[l,fn]])=>`<button class="${sf===key?'on':''}" onclick="UI.sf='${key}';render()">${l} (${all.filter(fn).length})</button>`).join('')}</div>
+ ${S.role==='proponent'?`<label class="row" style="gap:6px;margin-bottom:10px"><input type="checkbox" ${UI.f.mine?'checked':''} onchange="UI.f.mine=this.checked;render()"> Only my department</label>`:''}
+ <div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Drill date</th><th>Proponent</th><th>Requested</th><th>Due</th><th>Status</th><th>Rounds</th><th>Check</th><th></th></tr></thead><tbody>
+ ${rows.map(d=>{const s=d.script,late=s.status!=='Approved'&&s.due<S.demoDate;return`<tr class="click" onclick="A.openScript('${d.id}')"><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${fmtd(eff(d))}</td><td>${esc(dept(d.dept).name)}</td>
+ <td>${fmt(s.requestedAt)}</td><td class="${late?'e':''}">${fmt(s.due)}</td><td>${chip(s.status)}</td><td>${s.rounds.length||''}</td><td>${s.warnings&&s.warnings.length&&s.status==='Submitted'?`<span class="w">⚠ ${s.warnings.length}</span>`:''}</td>
+ <td><button class="btn sm">${canEditScript(d)?'Edit':S.role==='oemc'&&s.status==='Submitted'?'Review':'View'}</button></td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No scripts here. Scripts appear once a drill is approved and within '+S.settings.scriptLead+' days.</td></tr>'}
+ </tbody></table></div>`}
+function chkHtml(r){return r.e.map(x=>`<div class="e">✕ ${esc(x)}</div>`).join('')+r.w.map(x=>`<div class="w">⚠ ${esc(x)}</div>`).join('')+(!r.e.length&&!r.w.length?'<div class="ok">✓ Script is complete and consistent</div>':'')}
+function refreshCheck(id){const el=document.getElementById('chk');if(el)el.innerHTML=chkHtml(checkScript(drill(id)))}
+function pScript(){const d=drill(UI.sid);if(!d||!d.script)return'<p>Script not found.</p>';const s=d.script,ed=canEditScript(d),r=checkScript(d),id=d.id;
+ const inp=(v,on,extra='')=>`<input value="${esc(v)}" oninput="${on}" ${extra} style="border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%">`;
+ const area_staff=STAFF.filter(x=>x.area===d.area||x.dept===d.dept);
+ return`<div class="row noprint" style="margin-bottom:10px"><button class="btn sm" onclick="A.go('scripts')">← Scripts</button><button class="btn sm" onclick="A.open('${id}')">Drill record</button><button class="btn sm" onclick="print()">Print</button></div>
+ <h1>${cdot(d.code)}Script · ${code(d.code).name} · ${area(d.area).name}</h1>
+ <p class="sub"><span class="mono">${id}</span> · drill on <b>${fmtd(eff(d))}</b>${d.shift?' · '+d.shift+' shift':''} · proponent ${esc(dept(d.dept).name)} · requested ${fmt(s.requestedAt)} · due <b class="${s.status!=='Approved'&&s.due<S.demoDate?'e':''}">${fmt(s.due)}</b> · ${chip(s.status)}</p>
+ ${s.rounds.length?`<div class="card"><h2>OEMC review rounds</h2>${s.rounds.map((x,i)=>`<div style="margin:4px 0">Round ${i+1} · ${fmt(x.at)} · ${chip(x.decision)} ${esc(x.comment)}</div>`).join('')}</div>`:''}
+ <div class="card"><h2>Automatic check</h2><div id="chk" class="msgs">${chkHtml(r)}</div>
+ <div class="row noprint" style="margin-top:10px">${ed?`<button class="btn" onclick="A.sTemplate('${id}')">Start from the ${code(d.code).name} template</button><button class="btn primary" onclick="A.sSubmit('${id}')">Submit to OEMC</button>`:''}
+ ${S.role==='oemc'&&s.status==='Submitted'?`<button class="btn ok" onclick="A.sDecide('${id}',true,'')">Approve script</button><button class="btn danger" onclick="A.modal('sreturn','${id}')">Return with comments</button>`:''}</div>
+ ${S.role==='oemc'&&s.status==='Submitted'&&s.warnings.length?`<p class="muted" style="font-size:13px">The proponent submitted with ${s.warnings.length} warning(s) from the check above.</p>`:''}</div>
+ <div class="card"><h2>Scenario</h2>
+ <div class="field"><label>Story</label>${ed?`<textarea oninput="A.sSet('${id}','story',this.value)" style="min-height:90px">${esc(s.story)}</textarea>`:`<div>${esc(s.story)||'<span class="muted">—</span>'}</div>`}</div>
+ <div class="grid2"><div class="field"><label>Location</label>${ed?inp(s.location,`A.sSet('${id}','location',this.value)`):`<div>${esc(s.location)||'—'}</div>`}</div>
+ <div class="field"><label>Linked hazard (HVA rank)${S.settings.hvaRequired?' *':' · optional'}</label>${ed?`<select onchange="A.sSet('${id}','hva',this.value)"><option value="">None</option>${HVA.map((h,i)=>`<option value="${h}" ${s.hva===h?'selected':''}>${i+1}. ${h}</option>`).join('')}</select>`:`<div>${s.hva?`${HVA.indexOf(s.hva)+1}. ${s.hva}`:'—'}</div>`}</div></div>
+ <div class="field"><label>Objectives</label>${s.objectives.map((o,i)=>ed?`<div class="row" style="flex-wrap:nowrap">${inp(o,`A.sObj('${id}',${i},this.value)`,`placeholder="Objective ${i+1}"`)}<button class="btn sm danger" onclick="A.sDel('${id}','objectives',${i})">✕</button></div>`:`<div>${i+1}. ${esc(o)}</div>`).join('')}
+ ${ed?`<div><button class="btn sm" onclick="A.sAdd('${id}','obj')">+ Objective</button></div>`:''}</div>
+ <div class="field"><label>Scenario map</label>${s.map?`<img src="${s.map}" alt="Scenario map" style="max-width:100%;max-height:320px;border:1px solid var(--line);border-radius:6px">`:'<span class="muted">No map</span>'}
+ ${ed?`<input type="file" accept="image/*" onchange="A.sMap('${id}',this)">${s.map?`<button class="btn sm danger" onclick="A.sSet('${id}','map',null);render()">Remove map</button>`:''}`:''}</div></div>
+ <div class="card"><h2>Roles</h2><div class="tbl"><table><thead><tr><th>Role</th><th>Person</th><th>Department</th>${ed?'<th></th>':''}</tr></thead><tbody>
+ ${s.roles.map((x,i)=>{const p=staff(x.badge);return`<tr><td>${ed?`<select onchange="A.sRole('${id}',${i},'role',this.value)">${ROLES.map(o=>`<option ${o===x.role?'selected':''}>${o}</option>`).join('')}</select>`:x.role}</td>
+ <td>${ed?`<select onchange="A.sRole('${id}',${i},'badge',this.value)"><option value="">Not assigned</option>${area_staff.map(o=>`<option value="${o.badge}" ${o.badge===x.badge?'selected':''}>${o.name} · ${o.job} · ${o.badge}</option>`).join('')}</select>`:p?`${p.name} <span class="muted">${p.badge}</span>`:'<span class="muted">Not assigned</span>'}</td>
+ <td>${p?esc(dept(p.dept).name):''}</td>${ed?`<td><button class="btn sm danger" onclick="A.sDel('${id}','roles',${i})">✕</button></td>`:''}</tr>`}).join('')}</tbody></table></div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.sAdd('${id}','role')">+ Role</button>`:''}</div>
+ <div class="card"><h2>Event list (minute by minute)</h2><div class="tbl"><table><thead><tr><th>Minute</th><th class="wrap">What happens</th><th class="wrap">Expected action</th><th>Role</th>${ed?'<th></th>':''}</tr></thead><tbody>
+ ${s.events.map((x,i)=>ed?`<tr><td><input type="number" min="0" value="${x.t}" oninput="A.sEv('${id}',${i},'t',this.value)" style="width:70px;border:1px solid var(--line);border-radius:6px;padding:5px"></td>
+ <td class="wrap" style="min-width:220px">${inp(x.event,`A.sEv('${id}',${i},'event',this.value)`)}</td><td class="wrap" style="min-width:200px">${inp(x.expected,`A.sEv('${id}',${i},'expected',this.value)`)}</td>
+ <td><select onchange="A.sEv('${id}',${i},'role',this.value)"><option value="">Pick role</option>${ROLES.map(o=>`<option ${o===x.role?'selected':''}>${o}</option>`).join('')}</select></td><td><button class="btn sm danger" onclick="A.sDel('${id}','events',${i})">✕</button></td></tr>`
+ :`<tr><td class="mono">+${x.t} min</td><td class="wrap">${esc(x.event)}</td><td class="wrap">${esc(x.expected)}</td><td>${esc(x.role)}</td></tr>`).join('')||`<tr><td colspan="5" class="muted">No events yet.</td></tr>`}</tbody></table></div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.sAdd('${id}','event')">+ Event</button>`:''}</div>`}
+
+/* ---------- Step 2 pages: drill day (UC5) ---------- */
+function pDay(){const due=S.drills.filter(isDue).sort((a,b)=>a.current<b.current?-1:1),
+ up=S.drills.filter(d=>d.status==='Scheduled'&&d.current>S.demoDate&&d.current<=addDays(S.demoDate,14)).sort((a,b)=>a.current<b.current?-1:1),
+ recent=S.drills.filter(d=>d.run&&d.run.result).sort((a,b)=>a.run.date<b.run.date?1:-1).slice(0,15);
+ const row=(d,btn)=>`<tr><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${area(d.area).name}</td><td>${fmtd(d.current)}</td><td>${d.script?chip(d.script.status):'<span class="muted">No script yet</span>'}</td><td>${btn}</td></tr>`;
+ const head='<thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Date</th><th>Script</th><th></th></tr></thead>';
+ return`<h1>Drill day</h1><p class="sub">The observer records the drill on a tablet: checklist, participants by badge, findings and the result. ${S.settings.requireScript?'A drill can be recorded only when its script is approved (setting).':''} ${S.role!=='observer'&&S.role!=='admin'?'<b>Switch to the Observer role to record a drill.</b>':''}</p>
+ <div class="card"><h2>Due now (${due.length})</h2>${due.length?`<div class="tbl"><table>${head}<tbody>${due.map(d=>row(d,canRun(d)?`<button class="btn sm primary" onclick="A.openRun('${d.id}')">${d.run&&!d.run.result?'Continue':'Start'}</button>`:scriptOk(d)?'':'<span class="e">Script not approved</span>')).join('')}</tbody></table></div>`:'<p class="muted">Nothing due on the demo date. Move the demo date to a drill date to try it.</p>'}</div>
+ <div class="card"><h2>Next 14 days (${up.length})</h2>${up.length?`<div class="tbl"><table>${head}<tbody>${up.map(d=>row(d,`<button class="btn sm" onclick="A.setDate0('${d.current}');A.openRun('${d.id}')">Jump to this day</button>`)).join('')}</tbody></table></div>`:'<p class="muted">None.</p>'}</div>
+ <div class="card"><h2>Recently recorded</h2>${recent.length?`<div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Date</th><th>Result</th><th>Participants</th><th>Findings</th><th></th></tr></thead><tbody>
+ ${recent.map(d=>`<tr><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${area(d.area).name}</td><td>${fmtd(d.run.date)}</td><td>${chip(d.run.result==='Completed'?'Completed':'Redo required')}</td><td>${d.run.participants.length}</td><td>${d.run.findings.length}${d.run.findings.some(f=>f.gap)?` <span class="w">${d.run.findings.filter(f=>f.gap).length} gap</span>`:''}</td><td><button class="btn sm" onclick="UI.rid='${d.id}';A.go('run')">View</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No drill recorded yet.</p>'}</div>`}
+STC['Met']='c-ok';STC['Partly']='c-warn';STC['Not met']='c-err';STC['N/A']='c-grey';STC.Requested='c-grey';STC['Not completed']='c-err';STC.Postponed='c-warn';
+function partSearch(id){const el=document.getElementById('ps');if(!el)return;const q=UI.pq.toLowerCase().trim(),d=drill(id);
+ if(!q){el.innerHTML='';return}const hits=STAFF.filter(s=>(s.badge+' '+s.name).toLowerCase().includes(q)&&!d.run.participants.includes(s.badge)).slice(0,8);
+ el.innerHTML=hits.map(s=>`<div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span><span class="mono">${s.badge}</span> ${s.name} <span class="muted">${s.job} · ${esc(dept(s.dept).name)}</span></span><button class="btn sm" onclick="A.rAdd('${id}','${s.badge}')">Add</button></div>`).join('')||'<div class="muted">No match</div>'}
+function pRun(){const d=drill(UI.rid);if(!d||!d.run)return'<p>No drill-day record.</p>';const r=d.run,ro=!!r.result||!canRecord(d),id=d.id,cl=checklist(d.code),items=cl.flatMap(s=>s.items),
+ answered=items.filter(i=>r.checks[i.k]&&r.checks[i.k].v).length,byDept={};r.participants.forEach(b=>{const p=staff(b);if(p)byDept[p.dept]=(byDept[p.dept]||0)+1});
+ const seg=k=>{const c=r.checks[k]||{};return ro?chip(c.v||'—'):`<div class="seg">${['Met','Partly','Not met','N/A'].map(v=>`<button class="${c.v===v?'on-'+v.replace(/[^a-z]/gi,''):''}" onclick="A.rCheck('${id}','${k}','${v}')">${v}</button>`).join('')}</div>`};
+ return`<div class="row noprint" style="margin-bottom:10px"><button class="btn sm" onclick="A.go('day')">← Drill day</button>${d.script?`<button class="btn sm" onclick="A.openScript('${id}')">View script</button>`:''}<button class="btn sm" onclick="A.open('${id}')">Drill record</button></div>
+ <h1>${cdot(d.code)}${code(d.code).name} · ${area(d.area).name}</h1>
+ <p class="sub"><span class="mono">${id}</span> · ${fmtd(r.date||d.current)}${d.script&&d.script.location?' · '+esc(d.script.location):''} · observer ${esc(r.observer)} ${r.result?chip(r.result):chip('In progress')}</p>
+ ${d.script&&d.script.story?`<div class="note"><b>Scenario.</b> ${esc(d.script.story)}</div>`:''}
+ <div class="card"><h2>Times</h2><div class="row"><label class="row" style="gap:6px">Start <input type="time" value="${r.start}" ${ro?'disabled':''} onchange="A.rSet('${id}','start',this.value)" class="big"></label>
+ <label class="row" style="gap:6px">End <input type="time" value="${r.end}" ${ro?'disabled':''} onchange="A.rSet('${id}','end',this.value)" class="big"></label></div></div>
+ <div class="card"><h2>Observer checklist <span class="muted" style="font-weight:500">${answered} of ${items.length} answered</span></h2>
+ ${cl.map(sec=>`<div class="sec">${sec.sec}</div>${sec.items.map(i=>`<div class="ci"><div class="ct">${esc(i.t)}</div>${seg(i.k)}
+ ${ro?(r.checks[i.k]&&r.checks[i.k].note?`<div class="muted" style="font-size:13px;flex-basis:100%">${esc(r.checks[i.k].note)}</div>`:''):`<input placeholder="Note" value="${esc((r.checks[i.k]||{}).note||'')}" oninput="A.rNote('${id}','${i.k}',this.value)" class="big" style="flex-basis:100%">`}</div>`).join('')}`).join('')}</div>
+ <div class="card"><h2>Participants (${r.participants.length})</h2>
+ ${ro?'':`<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:240px"><input id="pq" class="big" style="width:100%" placeholder="Scan or type badge number or name" value="${esc(UI.pq)}" oninput="UI.pq=this.value;partSearch('${id}')"><div id="ps"></div></div>
+ <select class="big" onchange="if(this.value)A.rAddDept('${id}',this.value)"><option value="">Add a whole department…</option>${DEPTS.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>`}
+ <div class="muted" style="font-size:13px;margin:10px 0 6px">${Object.entries(byDept).map(([k,n])=>`${esc(dept(k).name)}: ${n}`).join(' · ')||'Nobody added yet'}</div>
+ <div class="pills">${r.participants.map(b=>{const p=staff(b);return`<span class="pill">${p?p.name:b} <span class="mono muted">${b}</span>${ro?'':` <button onclick="A.rDel('${id}','${b}')" title="Remove">✕</button>`}</span>`}).join('')}</div></div>
+ <div class="card"><h2>Findings (${r.findings.length})</h2><p class="muted" style="font-size:13px;margin-top:0">Anything that went wrong or could be better. "Possible gap" marks it for the improvement plan (Step 3).</p>
+ ${r.findings.map((f,i)=>`<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><div>${esc(f.text)} <span class="chip c-info">${esc(f.type)}</span>${f.gap?' <span class="chip c-warn">Possible gap</span>':''}</div>${ro?'':`<button class="btn sm danger" onclick="A.rFDel('${id}',${i})">✕</button>`}</div>`).join('')}
+ ${ro?'':`<div class="row" style="margin-top:10px;align-items:flex-end"><div class="field" style="flex:1;min-width:220px;margin:0"><label>Finding</label><input id="f-t" class="big" placeholder="e.g. Radio not transmitting from nurse station"></div>
+ <div class="field" style="margin:0"><label>Type</label><select id="f-ty" class="big">${GAP_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+ <label class="row" style="gap:6px;padding-bottom:8px"><input type="checkbox" id="f-g" checked> Possible gap</label><button class="btn" onclick="A.rFinding('${id}')">Add finding</button></div>`}</div>
+ ${ro?(r.result==='Not completed'&&d.notDoneReason?`<div class="card"><b>Not completed:</b> ${esc(d.notDoneReason)}</div>`:''):`<div class="card"><h2>Result</h2><div class="field"><label>If not completed, why?</label><textarea id="r-why" placeholder="Only needed for Not completed"></textarea></div>
+ <div class="row"><button class="btn ok big" onclick="A.rFinish('${id}','Completed')">Completed</button><button class="btn danger big" onclick="A.rFinish('${id}','Not completed')">Not completed</button><button class="btn big" onclick="A.rFinish('${id}','Postponed')">Postponed…</button></div>
+ <p class="muted" style="font-size:13px">Postponed opens a change request to OEMC. Not completed asks the proponent for a redo in the same month.</p></div>`}
+ ${d.prevRun?`<div class="card muted">An earlier attempt on ${fmt(d.prevRun.date)} was not completed.</div>`:''}`}
+
+/* ---------- Step 3 pages: After Action Reports (UC6) ---------- */
+STC.Prepared='c-info';STC.Reviewed='c-pur';STC.Concurred='c-pur';STC['In progress']='c-warn';STC.Closed='c-ok';STC.Overdue='c-err';
+const bars=(rows,color='var(--blue)')=>{const mx=Math.max(1,...rows.map(r=>r[1]));return rows.map(([l,n,extra])=>`<div class="bar"><div class="bl">${l}</div><div class="bt"><div style="width:${(n/mx*100).toFixed(1)}%;background:${color}"></div></div><div class="bn">${n}${extra||''}</div></div>`).join('')};
+function pReports(){const rf=UI.rf||'all',k=kpi(),all=S.drills.filter(d=>d.aar&&(S.role!=='proponent'||!UI.f.mine||d.dept===S.dept));
+ const F={all:['All',()=>true],prep:['To prepare',d=>!d.aar.sigs.length],sign:['In signature',d=>d.aar.sigs.length&&d.aar.status!=='Approved'],ok:['Approved',d=>d.aar.status==='Approved'],
+  late:['Overdue',d=>!d.aar.sigs.length&&d.aar.due<S.demoDate],mine:['Waiting for me',d=>canSignAAR(d)]};
+ const rows=all.filter(F[rf][1]).sort((a,b)=>a.run.date<b.run.date?1:-1);
+ return`<h1>After Action Reports</h1><p class="sub">Opened automatically when a drill is recorded as completed, pre-filled from the script and the drill-day record. Due ${S.settings.aarDue} days after the drill, with reminders on day 7 and day 14. Eight continuity checks must pass before the first signature, then four signatures in order: prepared, reviewed by the code reviewer, OEMC concurs, DOM approves.</p>
+ <div class="kpis"><div class="tile ${k.aBase?(k.aOnTime/k.aBase>=.9?'good':'bad'):''}"><div class="k">Reports on time</div><div class="v">${pct(k.aOnTime,k.aBase)}</div><div class="h">${k.aOnTime} of ${k.aBase} signed by the due date</div></div>
+ <div class="tile"><div class="k">Days to final approval</div><div class="v">${k.aDays}</div><div class="h">drill date to DOM signature, average</div></div>
+ <div class="tile ${k.aLate?'bad':''}"><div class="k">Overdue</div><div class="v">${k.aLate}</div><div class="h">past due, not signed</div></div></div>
+ <div class="tabs">${Object.entries(F).map(([key,[l,fn]])=>`<button class="${rf===key?'on':''}" onclick="UI.rf='${key}';render()">${l} (${all.filter(fn).length})</button>`).join('')}</div>
+ ${S.role==='proponent'?`<label class="row" style="gap:6px;margin-bottom:10px"><input type="checkbox" ${UI.f.mine?'checked':''} onchange="UI.f.mine=this.checked;render()"> Only my department</label>`:''}
+ <div class="tbl"><table><thead><tr><th>Drill</th><th>Code</th><th>Area</th><th>Drill date</th><th>Due</th><th>Status</th><th>Signatures</th><th>Improvements</th><th></th></tr></thead><tbody>
+ ${rows.map(d=>{const a=d.aar,late=!a.sigs.length&&a.due<S.demoDate;return`<tr class="click" onclick="A.openAAR('${d.id}')"><td class="mono">${d.id}</td><td>${cdot(d.code)}${code(d.code).name}</td><td>${d.area}</td><td>${fmt(d.run.date)}</td>
+ <td class="${late?'e':''}">${fmt(a.due)}</td><td>${chip(a.status)}</td><td class="mono">${'●'.repeat(a.sigs.length)}${'○'.repeat(4-a.sigs.length)}</td><td>${a.improvements.length}</td><td><button class="btn sm">${canSignAAR(d)?'Sign':'View'}</button></td></tr>`}).join('')||'<tr><td colspan="9" class="muted">No reports here.</td></tr>'}</tbody></table></div>`}
+function refreshAAR(id){const el=document.getElementById('achk');if(el)el.innerHTML=aarChkHtml(drill(id))}
+function aarChkHtml(d){return aarChecks(d).map(([t,ok],i)=>`<div class="${ok?'ok':'e'}">${ok?'✓':'✕'} ${i+1}. ${esc(t)}</div>`).join('')}
+function pAAR(){const d=drill(UI.aid);if(!d||!d.aar)return'<p>Report not found.</p>';const a=d.aar,ed=canEditAAR(d),id=d.id,r=d.run,st=nextStep(a);
+ const inp=(v,on,extra='')=>`<input value="${esc(v)}" oninput="${on}" ${extra} class="big" style="width:100%">`;
+ return`<div class="row noprint" style="margin-bottom:10px"><button class="btn sm" onclick="A.go('reports')">← Reports</button><button class="btn sm" onclick="A.open('${id}')">Drill record</button>${d.script?`<button class="btn sm" onclick="A.openScript('${id}')">Script</button>`:''}<button class="btn sm" onclick="UI.rid='${id}';A.go('run')">Drill-day record</button><button class="btn sm" onclick="print()">Print</button></div>
+ <h1>${cdot(d.code)}After Action Report · ${code(d.code).name} · ${area(d.area).name}</h1>
+ <p class="sub"><span class="mono">${id}</span> · drill ${fmtd(r.date)} · proponent ${esc(dept(d.dept).name)} · due <b class="${!a.sigs.length&&a.due<S.demoDate?'e':''}">${fmt(a.due)}</b> · ${chip(a.status)}${a.reminders.length?` · reminders sent on day ${a.reminders.join(' and ')}`:''}</p>
+ <div class="card"><h2>Signatures</h2><div class="sigs">${AAR_STEPS.map((s,i)=>{const g=a.sigs[i];return`<div class="sig ${g?'done':i===a.sigs.length&&a.status!=='Approved'?'next':''}"><div class="k">${i+1}. ${s[1]}</div>
+ ${g?`<div><b>${esc(g.by)}</b></div><div class="mono muted">${fmt(g.at.slice(0,10))} ${g.at.slice(11)}</div>`:`<div class="muted">${i===a.sigs.length&&a.status!=='Approved'?'Waiting':'—'}</div>`}</div>`}).join('')}</div>
+ ${a.returns.length?a.returns.map(x=>`<div class="msgs"><div class="w">Returned ${fmt(x.at)} by ${esc(x.by)}: ${esc(x.comment)}</div></div>`).join(''):''}
+ <div class="row noprint" style="margin-top:12px">${canSignAAR(d)?`<button class="btn ok" onclick="A.aSign('${id}')">Sign: ${st[1]}</button>${st[2]!=='proponent'?`<button class="btn danger" onclick="A.modal('areturn','${id}')">Return to proponent</button>`:''}`:''}
+ ${!canSignAAR(d)&&st&&a.status!=='Approved'?`<span class="muted">Next signature: ${st[1]}${st[2]==='reviewer'?` (${esc(reviewerName(d))})`:''}. Switch role in the header to sign.</span>`:''}
+ ${a.status==='Approved'?`<span class="muted">Approved. ${S.gaps.filter(g=>g.drill===id).length} gap(s) created.</span> <button class="btn sm" onclick="UI.gf={status:'',type:'',owner:'',q:'${id}'};A.go('gaps')">View gaps</button>`:''}</div></div>
+ <div class="card"><h2>Continuity checks</h2><div id="achk" class="msgs">${aarChkHtml(d)}</div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.aMissing('${id}')">Add missing items from drill day</button>`:''}</div>
+ <div class="card"><h2>Overview</h2><div class="grid2"><div class="field"><label>Drill date on the report</label>${ed?`<input type="date" value="${a.date}" onchange="A.aSet('${id}','date',this.value)" class="big">`:fmtd(a.date)}</div>
+ <div class="field"><label>Participants</label>${ed?`<input type="number" min="0" value="${a.participants}" oninput="A.aSet('${id}','participants',this.value)" class="big" style="width:120px">`:a.participants}</div></div>
+ <div class="field"><label>Summary</label>${ed?`<textarea oninput="A.aSet('${id}','summary',this.value)" style="min-height:90px">${esc(a.summary)}</textarea>`:`<div>${esc(a.summary)}</div>`}</div></div>
+ <div class="card"><h2>Objectives</h2><div class="tbl"><table><thead><tr><th class="wrap">Objective (from the script)</th><th>Rating</th><th class="wrap">Evidence</th></tr></thead><tbody>
+ ${a.objectives.map((o,i)=>`<tr><td class="wrap">${esc(o.text)}</td><td>${ed?`<select onchange="A.aObj('${id}',${i},'rating',this.value)"><option value="">Rate…</option>${RATINGS.map(x=>`<option ${o.rating===x?'selected':''}>${x}</option>`).join('')}</select>`:chip(o.rating||'—')}</td>
+ <td class="wrap" style="min-width:200px">${ed?inp(o.note,`A.aObj('${id}',${i},'note',this.value)`,'placeholder="Optional"'):esc(o.note)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">The script had no objectives.</td></tr>'}</tbody></table></div></div>
+ <div class="card"><h2>Strengths</h2>${a.strengths.map((s,i)=>ed?`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px">${inp(s,`A.aList('${id}','strengths',${i},null,this.value)`)}<button class="btn sm danger" onclick="A.aDel('${id}','strengths',${i})">✕</button></div>`:`<div>• ${esc(s)}</div>`).join('')}
+ ${ed?`<button class="btn sm" onclick="A.aAdd('${id}','strengths')">+ Strength</button>`:''}</div>
+ <div class="card"><h2>Improvement plan (${a.improvements.length})</h2><p class="muted" style="font-size:13px;margin-top:0">Each item becomes a gap when the DOM approves the report. Leave the due date empty to use the default for the type (${S.settings.gapRule==='30'?'30 days for all':'by type, see Master lists'}).</p>
+ <div class="tbl"><table><thead><tr><th class="wrap">Area for improvement</th><th>Type</th><th>Owner</th><th>Due</th>${ed?'<th></th>':''}</tr></thead><tbody>
+ ${a.improvements.map((x,i)=>ed?`<tr><td class="wrap" style="min-width:240px">${inp(x.text,`A.aList('${id}','improvements',${i},'text',this.value)`)}</td>
+ <td><select onchange="A.aList('${id}','improvements',${i},'type',this.value)">${GAP_TYPES.map(t=>`<option ${x.type===t?'selected':''}>${t}</option>`).join('')}</select></td>
+ <td><select onchange="A.aList('${id}','improvements',${i},'owner',this.value)">${DEPTS.map(o=>`<option value="${o.id}" ${x.owner===o.id?'selected':''}>${esc(o.name)}</option>`).join('')}</select></td>
+ <td><input type="date" value="${x.due}" onchange="A.aList('${id}','improvements',${i},'due',this.value)"></td><td><button class="btn sm danger" onclick="A.aDel('${id}','improvements',${i})">✕</button></td></tr>`
+ :`<tr><td class="wrap">${esc(x.text)}</td><td>${x.type}</td><td>${esc(dept(x.owner).name)}</td><td>${x.due?fmt(x.due):`<span class="muted">+${S.settings.gapRule==='30'?30:GAP_DAYS[x.type]} days</span>`}</td></tr>`).join('')||`<tr><td colspan="5" class="muted">No improvement items.</td></tr>`}</tbody></table></div>
+ ${ed?`<button class="btn sm" style="margin-top:8px" onclick="A.aAdd('${id}','improvements')">+ Improvement</button>`:''}
+ ${r.findings.filter(f=>!f.gap).length?`<p class="muted" style="font-size:13px">Other drill-day findings not flagged as gaps: ${r.findings.filter(f=>!f.gap).map(f=>esc(f.text)).join('; ')}</p>`:''}</div>`}
+
+/* ---------- Step 3 pages: gaps (UC7) ---------- */
+function gapFiltered(){const f=UI.gf;return S.gaps.filter(g=>(!f.status||(f.status==='open'?g.status!=='Closed':f.status==='overdue'?g.status!=='Closed'&&g.due<S.demoDate:g.status===f.status))&&
+ (!f.type||g.type===f.type)&&(!f.owner||g.owner===f.owner)&&(!f.esc||String(g.esc)===f.esc&&g.status!=='Closed')&&(!f.q||(g.id+' '+g.drill+' '+g.text).toLowerCase().includes(f.q.toLowerCase())))
+ .sort((a,b)=>(a.status==='Closed')-(b.status==='Closed')||(a.due<b.due?-1:1))}
+function pGaps(){const f=UI.gf,k=kpi(),rows=gapFiltered(),open=S.gaps.filter(g=>g.status!=='Closed');
+ const sel=(key,opts,lbl)=>`<select onchange="UI.gf.${key}=this.value;render()"><option value="">${lbl}</option>${opts.map(([v,t])=>`<option value="${v}" ${f[key]===v?'selected':''}>${t}</option>`).join('')}</select>`;
+ const byOwner={};open.filter(g=>g.due<S.demoDate).forEach(g=>byOwner[g.owner]=(byOwner[g.owner]||0)+1);
+ return`<h1>Gaps</h1><p class="sub">Every item in an approved report becomes a gap with an owner, a type and a due date. Open gaps escalate at 30 days (owner), 60 days (+ department head) and 90 days (+ executives). Facility gaps create an SAP maintenance request; overdue gaps go to Datix${S.settings.datixAuto?'':' (switched off)'}. Both are mock links in the demo.</p>
+ <div class="kpis"><div class="tile ${k.gAll?(k.gClosed/k.gAll>=.8?'good':'bad'):''}"><div class="k">Closed</div><div class="v">${pct(k.gClosed,k.gAll)}</div><div class="h">${k.gClosed} of ${k.gAll} · target above 80%</div></div>
+ <div class="tile"><div class="k">Open</div><div class="v">${k.gOpen}</div><div class="h">${open.filter(g=>g.status==='In progress').length} in progress</div></div>
+ <div class="tile ${k.gOver?'bad':''}"><div class="k">Overdue</div><div class="v">${k.gOver}</div><div class="h">sent to Datix</div></div>
+ <div class="tile ${k.gL3?'bad':''}"><div class="k">Open over 90 days</div><div class="v">${k.gL3}</div><div class="h">escalated to executives</div></div></div>
+ <div class="grid2"><div class="card"><h2>Overdue by owner</h2>${Object.keys(byOwner).length?bars(Object.entries(byOwner).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([o,n])=>[esc(dept(o).name),n]),'var(--err)'):'<p class="muted">None.</p>'}</div>
+ <div class="card"><h2>Open by escalation level</h2>${bars([0,1,2,3].map(l=>[l?ESC[l]:'Under 30 days',open.filter(g=>g.esc===l).length]),'var(--purple)')}</div></div>
+ <div class="filters">${sel('status',[['open','Open (all)'],['Open','Open, not started'],['In progress','In progress'],['overdue','Overdue'],['Closed','Closed']],'All statuses')}${sel('type',GAP_TYPES.map(t=>[t,t]),'All types')}
+ ${sel('owner',DEPTS.filter(o=>S.gaps.some(g=>g.owner===o.id)).map(o=>[o.id,o.name]),'All owners')}${sel('esc',[['1','30+ days'],['2','60+ days'],['3','90+ days']],'Any escalation')}
+ <input placeholder="Search gap, drill or text" value="${esc(f.q)}" onchange="UI.gf.q=this.value;render()"><button class="btn sm" onclick="A.download('gaps')">Download CSV</button></div>
+ <div class="muted" style="font-size:13px;margin-bottom:6px">${rows.length} gaps</div>
+ <div class="tbl"><table><thead><tr><th>Gap</th><th class="wrap">Description</th><th>Type</th><th>Owner</th><th>Created</th><th>Due</th><th>Status</th><th>Escalation</th><th>Links</th></tr></thead><tbody>
+ ${rows.slice(0,200).map(g=>{const ov=g.status!=='Closed'&&g.due<S.demoDate;return`<tr class="click" onclick="A.openGap('${g.id}')"><td class="mono">${g.id}</td><td class="wrap" style="min-width:240px">${esc(g.text)}<div class="muted mono" style="font-size:12px">${g.drill}</div></td><td>${g.type}</td><td>${esc(dept(g.owner).name)}</td>
+ <td>${fmt(g.created)}</td><td class="${ov?'e':''}">${fmt(g.due)}</td><td>${chip(ov?'Overdue':g.status)}</td><td>${g.status==='Closed'?'':g.esc?`<span class="chip ${g.esc>=3?'c-err':g.esc===2?'c-warn':'c-grey'}">${[30,60,90][g.esc-1]}+ days</span>`:''}</td>
+ <td class="mono" style="font-size:12px">${g.maint?g.maint.no:''}${g.maint&&g.datix?'<br>':''}${g.datix||''}</td></tr>`}).join('')||'<tr><td colspan="9" class="muted">No gaps match.</td></tr>'}</tbody></table></div>`}
+function gapDrawer(){const g=S.gaps.find(x=>x.id===UI.gap);if(!g)return'';const own=S.role==='admin'||(S.role==='owner'&&g.owner===S.dept),d=drill(g.drill),ov=g.status!=='Closed'&&g.due<S.demoDate;
+ return`<div class="overlay" onclick="if(event.target===this)A.close()"><div class="drawer"><div class="row" style="justify-content:space-between"><span class="mono muted">${g.id}</span><button class="btn sm" onclick="A.close()">Close</button></div>
+ <h1 style="margin-top:8px">${esc(g.text)}</h1><div>${chip(ov?'Overdue':g.status)} ${g.legacy?chip('Carried over from 2025'):''}</div>
+ <dl class="kv"><dt>Type</dt><dd>${g.type}</dd><dt>Owner</dt><dd>${esc(dept(g.owner).name)}<div class="muted">CPH: ${esc(dept(g.owner).head)}</div></dd>
+ <dt>From drill</dt><dd>${d?`<a href="#" onclick="A.open('${d.id}');return false" class="mono">${d.id}</a> · ${code(d.code).name}`:`<span class="mono">${g.drill}</span>`}</dd>
+ <dt>Created</dt><dd>${fmt(g.created)} · ${diffDays(g.created,g.closedAt||S.demoDate)} days ${g.status==='Closed'?'to close':'open'}</dd><dt>Due</dt><dd class="${ov?'e':''}">${fmt(g.due)}</dd>
+ ${g.closedAt?`<dt>Closed</dt><dd>${fmt(g.closedAt)}</dd>`:''}<dt>Escalation</dt><dd>${ESC[g.esc]}</dd>
+ ${g.maint?`<dt>SAP maintenance</dt><dd><span class="mono">${g.maint.no}</span> ${chip(g.maint.status==='Completed'?'Completed':g.maint.status==='In process'?'In progress':'Submitted')} <span class="muted">(mock)</span></dd>`:''}
+ ${g.datix?`<dt>Datix</dt><dd><span class="mono">${g.datix}</span> <span class="muted">(mock)</span></dd>`:''}</dl>
+ <div class="row" style="margin:12px 0">${own&&g.status==='Open'?`<button class="btn" onclick="A.gStatus('${g.id}','In progress','')">Start work</button>`:''}
+ ${own&&g.status!=='Closed'?`<button class="btn ok" onclick="A.modal('gclose','${g.id}')">Close gap</button>`:''}${S.role==='admin'&&g.status==='Closed'?`<button class="btn" onclick="A.gStatus('${g.id}','Open','Reopened after EPPU check')">Reopen</button>`:''}
+ ${own&&g.maint&&g.maint.status!=='Completed'?`<button class="btn" onclick="A.gMaint('${g.id}')">Simulate SAP update</button>`:''}<button class="btn" onclick="A.modal('gnote','${g.id}')">Add note</button></div>
+ ${!own?`<p class="muted" style="font-size:13px">Switch to "Gap owner / CPH" with ${esc(dept(g.owner).name)} in the header to update this gap.</p>`:''}
+ <h2 style="margin-top:20px">History</h2><div class="hist">${g.notes.slice().reverse().map(h=>`<div><div class="at">${fmt(h.at)} · ${esc(h.who)}</div>${esc(h.text)}</div>`).join('')}</div></div></div>`}
+
+/* ---------- KPI dashboard (SAC on Datasphere in production) ---------- */
+function pKPI(){const k=kpi(),ds=S.drills;const T=(lbl,v,h,good)=>`<div class="tile ${good===undefined?'':good?'good':'bad'}"><div class="k">${lbl}</div><div class="v">${v}</div><div class="h">${h}</div></div>`;
+ const months=MON.map((m,i)=>{const mm=pad(i+1),pl=ds.filter(d=>(d.original||d.planned||'').slice(5,7)===mm).length,dn=ds.filter(d=>d.status==='Completed'&&d.doneDate.slice(5,7)===mm).length;return[m,pl,dn]});
+ const mx=Math.max(1,...months.map(m=>m[1]));const byType={};S.gaps.forEach(g=>{byType[g.type]=byType[g.type]||[0,0];byType[g.type][g.status==='Closed'?0:1]++});
+ return`<h1>KPI dashboard</h1><div class="note">In production this page is a SAP Analytics Cloud story on Datasphere (UC15, UC17), fed by the same records. Here it is computed in the browser. Demo date ${fmtd(S.demoDate)}.</div>
+ <div class="kpis">${T('Planned vs required',pct(k.dated,k.required),`${k.dated} of ${k.required} (UC2)`)}${T('Done vs planned to date',pct(k.comp,k.due),`${k.comp} of ${k.due} (UC2)`,k.due?k.comp/k.due>=.9:undefined)}
+ ${T('Held on approved date',pct(k.held,k.comp),'target above 90% (UC3)',k.comp?k.held/k.comp>=.9:undefined)}${T('Scripts approved on time',pct(k.sOnTime,k.sAppr),`${k.sRounds} review rounds avg (UC4)`,k.sAppr?k.sOnTime/k.sAppr>=.9:undefined)}
+ ${T('Staff in at least 1 drill',pct(k.staffIn,STAFF.length),`${k.staffIn} of ${STAFF.length} (UC5)`)}${T('Reports on time',pct(k.aOnTime,k.aBase),`${k.aDays} days to final approval (UC6)`,k.aBase?k.aOnTime/k.aBase>=.9:undefined)}
+ ${T('Gaps closed',pct(k.gClosed,k.gAll),`target above 80% · ${k.gOver} overdue (UC7)`,k.gAll?k.gClosed/k.gAll>=.8:undefined)}${T('Open over 90 days',k.gL3,'escalated to executives (UC7)',k.gL3===0)}</div>
+ <div class="card"><h2>Drills by month: approved plan vs completed</h2><div class="cols">${months.map(([m,p,d])=>`<div class="col"><div class="cb"><div class="c1" style="height:${p/mx*100}%" title="${p} planned"></div><div class="c2" style="height:${d/mx*100}%" title="${d} completed"></div></div><div class="cl">${m}</div></div>`).join('')}</div>
+ <div class="row muted" style="font-size:13px;margin-top:8px"><span><span class="dot" style="background:var(--ice)"></span>Planned</span><span><span class="dot" style="background:var(--blue)"></span>Completed</span></div></div>
+ <div class="grid2"><div class="card"><h2>Gaps by type</h2>${bars(GAP_TYPES.map(t=>[t,(byType[t]||[0,0])[1],` open · ${(byType[t]||[0,0])[0]} closed`]),'var(--warn)')}</div>
+ <div class="card"><h2>Report status</h2>${bars(['Draft','Returned','Prepared','Reviewed','Concurred','Approved'].map(s=>[s,ds.filter(d=>d.aar&&d.aar.status===s).length]),'var(--purple)')}</div></div>
+ <div class="card"><h2>By area</h2><div class="tbl"><table><thead><tr><th>Area</th><th>Drills</th><th>Done to date</th><th>Held on date</th><th>Scripts on time</th><th>Reports on time</th><th>Open gaps</th><th>Overdue gaps</th></tr></thead><tbody>
+ ${AREAS.map(a=>{const x=ds.filter(d=>d.area===a.id),due=x.filter(d=>eff(d)&&eff(d)<=S.demoDate&&d.original),c=x.filter(d=>d.status==='Completed'),sa=x.filter(d=>d.script&&d.script.status==='Approved'),
+  ap=x.filter(d=>d.aar&&d.aar.sigs.length),g=S.gaps.filter(g=>g.area===a.id&&g.status!=='Closed');
+  return`<tr><td><b>${a.id}</b> <span class="muted">${a.name}</span></td><td>${x.length}</td><td>${pct(c.length,due.length)}</td><td>${pct(c.filter(d=>d.doneDate===d.original).length,c.length)}</td>
+  <td>${pct(sa.filter(d=>d.script.approvedAt<=d.script.due).length,sa.length)}</td><td>${pct(ap.filter(d=>d.aar.sigs[0].at.slice(0,10)<=d.aar.due).length,ap.length)}</td><td>${g.length}</td><td>${g.filter(x=>x.due<S.demoDate).length}</td></tr>`}).join('')}</tbody></table></div></div>`}
+
+function pMOH(){const ok=['Approved','Sent to MOH & MSMD'].includes(S.planStatus);const rows=S.drills.slice().sort((a,b)=>a.area.localeCompare(b.area)||(eff(a)<eff(b)?-1:1));
+ return`<h1>MOH and Aramco MSMD copy</h1><p class="sub">The approved schedule in a simple table. The real submission format is still to be confirmed with EPPU (open point). ${S.sentAt?`Sent on ${fmt(S.sentAt)}.`:''}</p>
+ ${ok?`<div class="row noprint" style="margin-bottom:12px">${S.role==='admin'&&S.planStatus==='Approved'?'<button class="btn primary" onclick="A.sendMOH()">Send copy to MOH and MSMD</button>':''}<button class="btn" onclick="csv()">Download CSV</button><button class="btn" onclick="print()">Print / save as PDF</button></div>
+ <div class="tbl"><table><thead><tr><th>#</th><th>Area</th><th>Facility</th><th>Drill</th><th>Required</th><th>Shift</th><th>Scheduled date</th><th>Original approved</th><th>Proponent</th></tr></thead><tbody>
+ ${rows.map((d,i)=>`<tr><td>${i+1}</td><td>${d.area}</td><td>${area(d.area).facility}</td><td>${code(d.code).name} (${code(d.code).meaning})</td><td>${d.label}</td><td>${d.shift||''}</td><td>${fmt(eff(d))}</td><td>${fmt(d.original)}</td><td>${esc(dept(d.dept).name)}</td></tr>`).join('')}</tbody></table></div>`
+ :`<div class="card">Available once OEMC has approved the whole plan. Current status: ${chip(S.planStatus)}</div>`}`}
+function csv(){const h=['No','Area','Facility','Code','Meaning','Required period','Shift','Scheduled date','Original approved date','Proponent','Status'];
+ const rows=S.drills.slice().sort((a,b)=>a.area.localeCompare(b.area)||(eff(a)<eff(b)?-1:1)).map((d,i)=>[i+1,d.area,area(d.area).facility,code(d.code).name,code(d.code).meaning,d.label,d.shift||'',eff(d)||'',d.original||'',dept(d.dept).name,d.status]);
+ const t=[h,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+t],{type:'text/csv'}));a.download=`drill-schedule-${YEAR}.csv`;a.click()}
+
+function pMaster(){const locked=S.planStatus!=='Not started',t=UI.ml;
+ const tabs=[['freq','Frequency rules'],['codes','Colour codes'],['reasons','Change reasons'],['roles','Drill roles'],['hva','Hazards (HVA)'],['check','Observer checklist'],['gaps','Gap types and deadlines'],['settings','Settings (open points)']];
+ let body='';
+ if(t==='roles')body=`<p class="sub">Roles a script can assign (UC4). Every script needs a drill controller and an evaluator / observer.</p><ul class="list">${ROLES.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+ if(t==='hva')body=`<p class="sub">Sample hazard vulnerability analysis, ranked. A script can link to one (optional unless the setting says otherwise).</p><ol class="list">${HVA.map(h=>`<li>${h}</li>`).join('')}</ol>`;
+ if(t==='check')body=`<p class="sub">The observer checklist is the same for every code except the Response section. Based on generic HSEEP evaluation guides.</p>${CHK_GENERIC.map(([s,i])=>`<div class="sec">${s}</div><ul class="list">${i.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}
+  <div class="sec">Response, by code</div><div class="tbl"><table><tbody>${CODES.map(c=>`<tr><td>${cdot(c.id)}${c.name}</td><td class="wrap">${CHK_CODE[c.id].join(' · ')}</td></tr>`).join('')}</tbody></table></div>`;
+ if(t==='gaps')body=`<p class="sub">The 8 types a finding or gap can have, the default owner and the default deadline. ${S.settings.gapRule==='30'?'<b>The setting currently uses one 30-day rule for all types.</b>':'Deadlines by type are in use (setting).'}</p>
+  <div class="tbl"><table><thead><tr><th>Type</th><th>Days to close</th><th>Default owner (DH)</th><th>Also creates</th></tr></thead><tbody>${GAP_TYPES.map(g=>`<tr><td>${g}</td><td>${GAP_DAYS[g]}</td><td>${esc(dept(defaultOwner(g,{area:'DH',dept:'(proponent)'})).name)}</td><td>${g==='Facility'?'SAP maintenance request':''}</td></tr>`).join('')}</tbody></table></div>
+  <p class="muted" style="font-size:13px">Escalation for every type: 30 days open → owner, 60 → + department head (CPH), 90 → + executives. Past the due date → Datix.</p>`;
+ if(t==='freq')body=`<p class="sub">How often each code must be drilled in each area. The plan is generated from this table. ${locked?'<b>Locked</b> because the plan is generated; Reset to change it.':S.role==='admin'?'You can change any cell before generating.':'Only the EPPU admin can change it.'}</p>
+ <div class="tbl"><table><thead><tr><th>Code</th>${AREAS.map(a=>`<th>${a.id}</th>`).join('')}<th>Per year</th></tr></thead><tbody>
+ ${CODES.map(c=>`<tr><td>${cdot(c.id)}${c.name}</td>${AREAS.map(a=>`<td>${!locked&&S.role==='admin'?`<select onchange="A.setFreq('${c.id}','${a.id}',this.value)">${Object.entries(FREQ).map(([k,v])=>`<option value="${k}" ${S.freq[c.id][a.id]===k?'selected':''}>${v}</option>`).join('')}</select>`:FREQ[S.freq[c.id][a.id]]}</td>`).join('')}
+ <td class="mono">${AREAS.reduce((n,a)=>n+periods(S.freq[c.id][a.id]).length,0)}</td></tr>`).join('')}</tbody></table></div>
+ <p class="muted" style="font-size:13px">Blue and Brown monthly per area, Pink quarterly and IT yearly come from the 21 Oct session. The others are sample values based on general hospital practice (for example NFPA 101 fire drills each quarter on each shift) and need EPPU confirmation.</p>`;
+ if(t==='codes')body=`<div class="tbl"><table><thead><tr><th>Code</th><th class="wrap">Meaning (sample)</th><th>Report reviewer role</th><th>Proponent in DH</th></tr></thead><tbody>${CODES.map(c=>`<tr><td>${cdot(c.id)}<b>${c.name}</b></td><td class="wrap">${c.meaning}</td><td>${c.reviewer}</td><td>${dept(proponentFor(c.id,'DH')).name}</td></tr>`).join('')}</tbody></table></div>`;
+ if(t==='reasons')body=`<p class="sub">The fixed list a proponent picks from when asking to move a drill (UC3).</p><ul class="list">${REASONS.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+ if(t==='settings'){const dis=S.role!=='admin'?'disabled':'';body=`<p class="sub">Open questions from the catalogue, kept as settings so they can change during review without a rebuild.</p>
+ <div class="field"><label>Plan approval</label><select ${dis} onchange="A.setSetting('approvalMode',this.value)"><option value="area" ${S.settings.approvalMode==='area'?'selected':''}>One approval per area, rolled up to the plan</option><option value="plan" ${S.settings.approvalMode==='plan'?'selected':''}>One approval for the whole plan</option></select></div>
+ <div class="field"><label><input type="checkbox" ${dis} ${S.settings.earlierOff?'checked':''} onchange="A.setSetting('earlierOff',this.checked)"> Moving a drill earlier counts as off-schedule</label></div>
+ <div class="field"><label>Max drills per area in one week (warning)</label><input type="number" min="1" max="10" ${dis} value="${S.settings.maxPerWeek}" onchange="A.setSetting('maxPerWeek',+this.value)" style="width:90px"></div>
+ <div class="field"><label>Minimum days between two drills of the same code in an area (warning)</label><input type="number" min="0" max="60" ${dis} value="${S.settings.minGap}" onchange="A.setSetting('minGap',+this.value)" style="width:90px"></div>
+ <div class="field"><label>Request the script this many days before the drill</label><input type="number" min="7" max="90" ${dis} value="${S.settings.scriptLead}" onchange="A.setSetting('scriptLead',+this.value)" style="width:90px"></div>
+ <div class="field"><label>Script due this many days before the drill</label><input type="number" min="1" max="60" ${dis} value="${S.settings.scriptDue}" onchange="A.setSetting('scriptDue',+this.value)" style="width:90px"></div>
+ <div class="field"><label><input type="checkbox" ${dis} ${S.settings.requireScript?'checked':''} onchange="A.setSetting('requireScript',this.checked)"> A drill can run only with an approved script</label></div>
+ <div class="field"><label><input type="checkbox" ${dis} ${S.settings.hvaRequired?'checked':''} onchange="A.setSetting('hvaRequired',this.checked)"> Each script must link to a ranked hazard (HVA)</label></div>
+ <div class="field"><label>After Action Report due this many days after the drill</label><input type="number" min="3" max="60" ${dis} value="${S.settings.aarDue}" onchange="A.setSetting('aarDue',+this.value)" style="width:90px"></div>
+ <div class="field"><label>Gap deadline</label><select ${dis} onchange="A.setSetting('gapRule',this.value)"><option value="type" ${S.settings.gapRule==='type'?'selected':''}>By gap type (see Gap types)</option><option value="30" ${S.settings.gapRule==='30'?'selected':''}>One 30-day rule for all gaps</option></select></div>
+ <div class="field"><label><input type="checkbox" ${dis} ${S.settings.datixAuto?'checked':''} onchange="A.setSetting('datixAuto',this.checked)"> Send overdue gaps to Datix automatically</label></div>
+ <div class="field"><label>Deadline for proponents to pick dates</label><input type="date" ${dis} value="${S.settings.pickDeadline}" onchange="A.setSetting('pickDeadline',this.value)" style="width:170px"></div>`}
+ return`<h1>Master lists</h1><p class="sub">UC19. Lists the app owns. In production they are maintained in the app and published to Datasphere so the dashboards use the same codes.</p>
+ <div class="tabs">${tabs.map(([k,l])=>`<button class="${t===k?'on':''}" onclick="UI.ml='${k}';render()">${l}</button>`).join('')}</div><div class="card">${body}</div>`}
+
+function pEmails(){return`<h1>Email log</h1><p class="sub">The messages the app would send. In the demo nothing leaves the browser. On BTP these come from SAP Build Process Automation.</p>
+ ${S.emails.length?S.emails.slice(0,150).map(m=>`<div class="email"><div class="meta">${fmt(m.at)} · to ${esc(m.to)}</div><b>${esc(m.subject)}</b><div class="muted">${esc(m.body)}</div></div>`).join('')+(S.emails.length>150?`<p class="muted">${S.emails.length-150} older messages not shown.</p>`:''):'<div class="card muted">No messages yet.</div>'}`}
+
+/* Data model for the SAP handover (entities the app owns; master data stays in Datasphere) */
+const MODEL=[
+ ['Drill','UC2, UC3','id, code, area, proponentDept, frequency, period, windowStart, windowEnd, shift, plannedDate, originalApprovedDate, currentDate, status, changeCount, doneDate, notDoneDate, notDoneReason','Open → Date proposed → Submitted → Scheduled → (Change pending) → Completed | Redo required'],
+ ['PlanApproval','UC2','unit (area or whole plan), status, decidedBy, decidedAt, comment','Draft → Submitted → Approved | Returned'],
+ ['ChangeRequest','UC3','id, drill, type (reschedule | redo), fromDate, toDate, reason, comment, warnings, requestedBy, requestedAt, decision, decidedBy, decidedAt','Pending → Approved | Rejected'],
+ ['Script','UC4','drill, requestedAt, dueDate, story, location, hazard (HVA), mapImage, objectives[], submittedAt, approvedAt, warnings[]','Requested → Draft → Submitted → Approved | Returned'],
+ ['ScriptEvent / ScriptRole','UC4','minute, event, expectedAction, role · role, staffBadge',''],
+ ['ReviewRound','UC4','script, at, by, decision, comment',''],
+ ['DrillDayRecord','UC5','drill, date, observer, startTime, endTime, result, checklist answers (item, Met/Partly/Not met/N/A, note)','In progress → Completed | Not completed'],
+ ['Participant / Finding','UC5','record, staffBadge · record, text, type (8), possibleGap',''],
+ ['AfterActionReport','UC6','drill, created, dueDate, remindersSent, reportDate, participants, summary, objective ratings, strengths[]','Draft → Prepared → Reviewed → Concurred → Approved | Returned'],
+ ['Improvement / Signature','UC6','report, text, type, ownerDept, dueDate · report, step, signedBy, signedAt (date and time)',''],
+ ['Gap','UC7','id, drill, code, area, text, type, ownerDept, created, dueDate, status, closedAt, escalationLevel, maintenanceRequestNo, datixRef, notes[]','Open → In progress → Closed (EPPU can reopen)'],
+ ['EmailLog','all','at, to, subject, body','']];
+const GUIDE=[
+ ['overview','Overview','All roles','Your home page. It shows the plan status, the main numbers and a to-do list for the role you are viewing as.',
+  ['Pick a role in <b>View as</b> at the top. The to-do list changes to that role.','Use <b>Start planning</b> for an empty year (1 Dec 2025) or <b>Load mid-year</b> for half a year of history (15 Jul 2026).','Click a button in the to-do list to jump to the page where the work is.'],
+  'Switch between EPPU admin and OEMC reviewer and compare their to-do lists.'],
+ ['kpi','KPI dashboard','EPPU admin, management','All drill KPIs on one page: plan coverage, drills held on the approved date, scripts on time, staff trained, reports on time and gaps closed.',
+  ['Read the tiles: each shows the value, the target and the case it comes from.','Look at the monthly chart: planned drills against completed drills.','Change the demo date to see the numbers move.'],
+  'Load mid-year: "Held on approved date" is 89%, just under the 90% target.'],
+ ['plan','Annual plan (UC2)','EPPU admin, Proponent','Every mandatory drill of the year, one row each, built from the frequency rules (code, area and period).',
+  ['As <b>EPPU admin</b>, press <b>Generate 2026 slots</b> on Overview to create the 222 drills.','As <b>Proponent</b>, choose your department and set a date for each drill, or press <b>Suggest dates for open slots</b>.','A date outside the required period is refused. Weekends, holidays, Ramadan and clashes show a warning icon.','Click any row to open the drill record: dates, status and full history.'],
+  'Start planning, generate, then set a drill date on a Friday and read the warning.'],
+ ['approvals','Approvals (UC2, UC3)','EPPU admin, OEMC reviewer','Where the plan is submitted and approved area by area, and where change requests wait for a decision.',
+  ['As <b>EPPU admin</b>, press <b>Submit</b> on an area once all its drills have a date.','As <b>OEMC reviewer</b>, press <b>Approve</b>, or <b>Return</b> with a comment.','On approval each planned date becomes the original approved date. It never changes again.'],
+  'Return one area with a comment, then fix and submit it again as EPPU admin.'],
+ ['changes','Change control (UC3)','Proponent, Observer, OEMC reviewer','After approval a date only changes through a change request. This page lists all requests and why they were made.',
+  ['Open an approved drill from Annual plan and press <b>Request change</b>: new date, reason and comment, then <b>Send to OEMC</b>.','As <b>OEMC reviewer</b>, <b>Approve</b> or <b>Reject</b> the request here or on Approvals.','A drill not completed shows <b>Request redo</b>: the redo must be in the same month.'],
+  'Load mid-year: CR-016 (clinical surge) is waiting for OEMC.'],
+ ['moh','MOH / MSMD copy (UC2)','EPPU admin','The approved schedule as a simple table for the Ministry of Health and Aramco MSMD.',
+  ['It opens once the whole plan is approved.','Press <b>Send copy to MOH and MSMD</b>; the email appears in the Email log.','Use <b>Download CSV</b> or <b>Print / save as PDF</b> for the file itself.'],
+  'Approve all areas as OEMC, then send the copy as EPPU admin.'],
+ ['scripts','Drill scripts (UC4)','Proponent, OEMC reviewer','Every drill needs a scenario script. The app asks for it 30 days before the drill; it is due 14 days before.',
+  ['Use the tabs: <b>To write</b>, <b>In review</b>, <b>Approved</b>, <b>Overdue</b>.','As <b>Proponent</b>, open a script and press <b>Start from the … template</b>, edit the story, objectives, roles and events, then <b>Submit to OEMC</b>.','The <b>Automatic check</b> compares the story with each event: age, male / female and location.','As <b>OEMC reviewer</b>, press <b>Approve script</b> or <b>Return with comments</b>.'],
+  'Load mid-year, view as OEMC and open PINK-DH-Q3: the check shows two mismatches about the child.'],
+ ['day','Drill day (UC5)','Observer','The observer’s tablet screen: drills due today, and the next 14 days.',
+  ['Under <b>Due now</b>, press <b>Start</b> on a drill.','Answer every checklist item: <b>Met</b>, <b>Partly</b> or <b>Not met</b>. Set start and end times.','Add participants: scan or type a badge number or name, then <b>Add</b>.','Add findings with a type. Tick “possible gap” to send it to the report.','Finish with <b>Completed</b>, <b>Not completed</b> (starts a redo) or <b>Postponed…</b> (opens a change request).'],
+  'Use <b>Jump to this day</b> on an upcoming drill to move the demo date and record it.'],
+ ['reports','After Action Reports (UC6)','Proponent, Code reviewer, OEMC, DOM approver','A report opens when a drill is completed, filled in from the script and the drill-day record. It is due 14 days after the drill.',
+  ['Use the tabs: <b>To prepare</b>, <b>In signature</b>, <b>Approved</b>, <b>Overdue</b>, <b>Waiting for me</b>.','As <b>Proponent</b>, open the report, write the summary, rate each objective and press <b>Add missing items from drill day</b>.','All 8 continuity checks must be green, then <b>Sign: Prepared</b>.','Switch to <b>Code reviewer</b>, <b>OEMC reviewer</b> and <b>DOM approver</b> in turn and sign. Any of them can <b>Return to proponent</b>.','When the DOM signs, each improvement item becomes a gap.'],
+  'Load mid-year and open BLUE-AH-M06: it is waiting for the code reviewer.'],
+ ['gaps','Gaps (UC7)','Gap owner / CPH, EPPU admin','Every improvement from an approved report, with owner, type and due date, until it is closed.',
+  ['Filter by status, type, owner or escalation level. Click a gap to open it.','As <b>Gap owner / CPH</b>, press <b>Start work</b>, <b>Add note</b>, or <b>Close gap</b> with what was done.','Gaps escalate at 30 days (owner), 60 days (+ department head) and 90 days (+ executives). Overdue gaps go to Datix (mock).','Facility gaps create an SAP maintenance request (mock). <b>Simulate SAP update</b> moves it on.'],
+  'Open G-049 “Radio not transmitting…”: a Facility gap with an SAP request, escalated at 60 days.'],
+ ['master','Master lists (UC19)','EPPU admin','The rules and lists behind the app: frequency rules, colour codes, change reasons, drill roles, hazards, the observer checklist, gap types and settings.',
+  ['Open a tab to read a list.','Frequency rules can be changed only before the plan is generated.','<b>Settings (open points)</b> holds the choices still to confirm with EPPU, such as script lead time.'],
+  'After Start planning, change a frequency rule, then generate and count the drills.'],
+ ['emails','Email log','All roles','Every email the app would send: requests, approvals, reminders and escalations. In the demo nothing leaves the browser.',
+  ['Newest messages first, with date, recipient and text.'],
+  'Approve a script, then check the email the proponent would get.'],
+ ['about','About this demo','EPPU, SAP team','The business rules (BR-01 to BR-26) and the handover pack for the SAP team: data model, roles and sample data download.',
+  ['Read the rules case by case.','Download the data model and sample data as JSON or CSV.'],
+  'Use this page when you agree the rules with EPPU.']];
+function pGuide(){return`<h1>How to use this demo</h1><p class="sub">The app follows one drill from the yearly plan to closed gaps. Nothing to install and no sign-in. Below: how to start, a 10-minute tour, then each page on its own.</p>
+ <div class="grid2"><div class="card"><h2>Start in one minute</h2><ol class="list">
+ <li><b>View as</b> (top bar): pick the role you want to play. Each role sees its own to-do list and buttons.</li>
+ <li><b>Dept</b> (top bar, for Proponent and Gap owner): pick the department.</li>
+ <li><b>Demo date</b> (top bar): moves time forward, so reminders, escalations and due drills appear.</li>
+ <li><b>Reset</b> (top bar): brings back the sample data. Your changes stay only in this browser.</li>
+ <li>On <b>Overview</b>: <b>Start planning</b> (empty year, 1 Dec 2025) or <b>Load mid-year</b> (15 Jul 2026).</li></ol></div>
+ <div class="card"><h2>The seven roles</h2><div class="tbl"><table><tbody>
+ <tr><td><b>EPPU admin</b></td><td class="wrap">Generates and submits the plan, sends the MOH copy, follows KPIs</td></tr>
+ <tr><td><b>Proponent</b></td><td class="wrap">Department head: picks dates, writes scripts, prepares reports</td></tr>
+ <tr><td><b>OEMC reviewer</b></td><td class="wrap">Approves the plan, change requests and scripts; concurs on reports</td></tr>
+ <tr><td><b>Observer</b></td><td class="wrap">Records the drill on drill day</td></tr>
+ <tr><td><b>Code reviewer (AAR)</b></td><td class="wrap">Reviews the report for the drill’s colour code</td></tr>
+ <tr><td><b>DOM approver</b></td><td class="wrap">Gives the final report approval</td></tr>
+ <tr><td><b>Gap owner / CPH</b></td><td class="wrap">Works and closes the gaps of a department</td></tr></tbody></table></div></div></div>
+ <div class="card"><h2>A 10-minute tour</h2><ol class="list">
+ <li><b>Plan</b> (2 min): Start planning, view as EPPU admin, Generate 2026 slots, Suggest dates, open Annual plan.</li>
+ <li><b>Approve</b> (1 min): Approvals, Submit an area; view as OEMC reviewer and Approve.</li>
+ <li><b>Mid-year</b> (1 min): Load mid-year and read the Overview numbers and to-do list.</li>
+ <li><b>Change</b> (1 min): Change control, view as OEMC reviewer, approve CR-016.</li>
+ <li><b>Script</b> (1 min): Drill scripts, open PINK-DH-Q3 and read the automatic check.</li>
+ <li><b>Drill day</b> (2 min): view as Observer, Drill day, Start, answer the checklist, add a badge, Completed.</li>
+ <li><b>Report</b> (1 min): After Action Reports, open BLUE-AH-M06 and sign as Code reviewer.</li>
+ <li><b>Gaps</b> (1 min): Gaps, open G-049, then the KPI dashboard.</li></ol></div>
+ <div class="card"><h2>Page by page</h2><div class="pills">${GUIDE.map(([k,t])=>`<button class="pill" style="cursor:pointer;border:0;padding-right:12px" onclick="document.getElementById('g-${k}').scrollIntoView({behavior:'smooth'})">${t}</button>`).join('')}</div></div>
+ ${GUIDE.map(([k,t,who,what,steps,tip])=>`<div class="card" id="g-${k}"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${t}</h2><button class="btn sm" onclick="A.go('${k}')">Open this page</button></div>
+ <p style="margin:10px 0 6px"><span class="chip c-grey">Who</span> ${who}</p><p style="margin:6px 0">${what}</p>
+ <div class="sec">How to use it</div><ol class="list">${steps.map(x=>`<li>${x}</li>`).join('')}</ol>
+ <div class="note" style="margin:12px 0 0"><b>Try this:</b> ${tip}</div></div>`).join('')}`}
+function pAbout(){return`<h1>About this demo</h1><p class="sub">The complete drill lifecycle app, cases 2 to 7: the annual schedule (UC2), change control (UC3), master lists (UC19), the drill script (UC4), drill day (UC5), the After Action Report (UC6) and gaps (UC7), plus a KPI dashboard and the handover pack for SAP at the bottom of this page.</p>
+ <div class="card"><h2>Step 3 walkthrough</h2><ol class="list">
+ <li>Press <b>Load mid-year</b> on Overview (demo date 15 Jul 2026), then open the <b>KPI dashboard</b>.</li>
+ <li>As <b>Proponent</b>, open After Action Reports, pick one to prepare, rate the objectives, use "Add missing items from drill day" and sign. All 8 continuity checks must be green.</li>
+ <li>Switch to <b>Code reviewer</b>, <b>OEMC</b> and <b>DOM approver</b> in turn and sign. Each signature is stamped with date and time. When the DOM signs, each improvement becomes a gap.</li>
+ <li>Open <b>Gaps</b>: filter by overdue or 90+ days. The gap "Radio not transmitting…" from IT-DH-Y has a SAP maintenance request.</li>
+ <li>Switch to <b>Gap owner / CPH</b>, pick a department and close a gap with evidence. Move the demo date forward to watch escalation and Datix referral.</li></ol></div>
+ <div class="card"><h2>Business rules in step 3</h2><ol class="list">
+ <li>BR-19 A report opens when a drill is recorded as completed, pre-filled from the script (objectives) and drill day (participants, findings flagged as possible gaps, strengths).</li>
+ <li>BR-20 Due ${S.settings.aarDue} days after the drill (setting); reminders to the proponent on day 7 and day 14 while unsigned.</li>
+ <li>BR-21 Eight continuity checks must pass before the first signature: date and participants match drill day, summary written, every objective rated, every "Not met" checklist item and every possible-gap finding in the improvement plan, every item has type and owner, at least one strength.</li>
+ <li>BR-22 Four signatures in order, each with date and time: prepared (proponent), reviewed (reviewer role for the code), OEMC concurs, DOM approves. Any signer after the first can return it; returning clears all signatures.</li>
+ <li>BR-23 On DOM approval each improvement becomes a gap. Due date: set on the item, or by type, or one 30-day rule (setting).</li>
+ <li>BR-24 Facility gaps create an SAP maintenance request (mock). Overdue gaps go to Datix (mock, setting).</li>
+ <li>BR-25 Escalation by days open: 30 → owner, 60 → + department head (CPH), 90 → + executives.</li>
+ <li>BR-26 Closing a gap needs a description of what was done. EPPU can reopen. KPI: share closed, target above 80%.</li></ol></div>
+ <div class="card"><h2>Step 2 walkthrough</h2><ol class="list">
+ <li>Press <b>Load mid-year</b> on Overview (demo date 15 Jul 2026).</li>
+ <li>As <b>Proponent</b>, open Drill scripts, pick a requested script, start from the template and edit it. Change an age or a ward in one event and watch the check flag it. Submit.</li>
+ <li>As <b>OEMC</b>, open the Code Pink script in review: the check shows the story and the event list disagree on the child. Return it with comments, or approve another script.</li>
+ <li>As <b>Observer</b>, open Drill day, jump to an upcoming drill, fill the checklist on a tablet, add participants by badge, log a finding as a possible gap and record the result.</li>
+ <li>Open the drill <b>IT-DH-Y</b> (oxygen supply failure, April): its record has the "radio not transmitting" finding flagged for Step 3.</li></ol></div>
+ <div class="card"><h2>Business rules in step 2</h2><ol class="list">
+ <li>BR-11 When a drill is approved and ${S.settings.scriptLead} days away, the app requests the script from the proponent. It is due ${S.settings.scriptDue} days before the drill (settings).</li>
+ <li>BR-12 A script needs a story, at least one objective, an event list with a role on each event, and a person as drill controller and as evaluator / observer. Hard stop.</li>
+ <li>BR-13 The story is checked against each event: ages, male / female and ward or building names must match. Mismatches are warnings that OEMC sees.</li>
+ <li>BR-14 OEMC approves or returns a script with comments; each decision is a review round. KPIs: approved on time and average rounds.</li>
+ <li>BR-15 Drill day can be recorded only on or after the drill date and, by setting, only with an approved script.</li>
+ <li>BR-16 Completed needs every checklist item answered, an end time and at least one participant. Not completed needs a reason and starts the redo rule (BR-09). Postponed opens a change request (BR-07).</li>
+ <li>BR-17 Participants are recorded by badge from the Datasphere staff list. KPI: share of staff in at least one drill.</li>
+ <li>BR-18 Findings carry one of 8 types; those marked "possible gap" go to the improvement plan in Step 3.</li></ol></div>
+ <div class="card"><h2>How to walk through it</h2><ol class="list">
+ <li>As <b>EPPU admin</b>, open Master lists and check the frequency rules, then generate the ${YEAR} slots from Overview.</li>
+ <li>Switch to <b>Proponent</b>, pick a department and set dates in My drills. Try a Friday, Eid or a date outside the period to see the checks.</li>
+ <li>Back as admin, let the app suggest the remaining dates and submit each area.</li>
+ <li>As <b>OEMC</b>, approve the areas (or return one with a comment). Then, as admin, send the copy to MOH and MSMD.</li>
+ <li>Move the demo date forward in the header, request a change as a proponent and approve it as OEMC. The original date stays.</li>
+ <li>Or press <b>Load mid-year</b> on Overview to see KPIs with half a year of history.</li></ol></div>
+ <div class="card"><h2>Business rules in this step</h2><ol class="list">
+ <li>BR-01 One slot per code, area and period from the frequency table; quarterly-per-shift creates Day, Evening and Night slots.</li>
+ <li>BR-02 A planned date must fall inside its required period. Hard stop.</li>
+ <li>BR-03 Warnings (do not block): weekend, public holiday, Ramadan, same day as another drill in the area, more than ${S.settings.maxPerWeek} drills per area per week, less than ${S.settings.minGap} days from the same code in the area.</li>
+ <li>BR-04 EPPU submits a part only when every drill in it has a date. OEMC approves or returns with a comment.</li>
+ <li>BR-05 On approval the planned date becomes the original approved date and is never changed afterwards.</li>
+ <li>BR-06 The copy for MOH and Aramco MSMD can be sent only when the whole plan is approved.</li>
+ <li>BR-07 After approval a date changes only through a change request with a reason from the list, approved by OEMC.</li>
+ <li>BR-08 Moving a drill earlier counts as off-schedule (setting). Moving it out of its period is warned.</li>
+ <li>BR-09 A drill not completed must be redone in the same calendar month, after the failed date.</li>
+ <li>BR-10 KPI held on approved date = completed on the original approved date ÷ completed. Target above 90%.</li></ol></div>
+ <div class="card"><h2>Demo to SAP BTP</h2><div class="tbl"><table><thead><tr><th>Piece</th><th class="wrap">In the demo</th><th class="wrap">On SAP BTP</th></tr></thead><tbody>
+ <tr><td>Screens</td><td class="wrap">This web app, Fiori-style worklist, record and inbox</td><td class="wrap">SAP Build Apps or SAP Fiori elements</td></tr>
+ <tr><td>Approvals, emails</td><td class="wrap">Status flows, in-app inbox and email log</td><td class="wrap">SAP Build Process Automation</td></tr>
+ <tr><td>Drill records</td><td class="wrap">This browser's storage; Reset restores sample data</td><td class="wrap">SAP HANA Cloud, replicated to Datasphere</td></tr>
+ <tr><td>People, CPH, facilities</td><td class="wrap">Built-in sample lists, read-only</td><td class="wrap">Live from Datasphere (BDC)</td></tr>
+ <tr><td>KPIs</td><td class="wrap">Overview tiles</td><td class="wrap">SAC on Datasphere (UC15, UC17)</td></tr></tbody></table></div></div>
+ <div class="card"><h2>Handover pack for SAP</h2><p class="muted">What the SAP team needs to rebuild this on BTP: the records the app owns, who does what, the business rules above, and the sample data.</p>
+ <div class="row" style="margin-bottom:12px"><button class="btn primary" onclick="A.download('json')">Download data model + sample data (JSON)</button><button class="btn" onclick="A.download('drills')">Drills (CSV)</button><button class="btn" onclick="A.download('gaps')">Gaps (CSV)</button><button class="btn" onclick="csv()">Approved schedule (CSV)</button></div>
+ <h2>Records the app owns (SAP HANA Cloud, replicated to Datasphere)</h2><div class="tbl"><table><thead><tr><th>Entity</th><th>Case</th><th class="wrap">Main fields</th><th class="wrap">Status flow</th></tr></thead><tbody>
+ ${MODEL.map(([e,u,f,s])=>`<tr><td><b>${e}</b></td><td>${u}</td><td class="wrap" style="min-width:280px;font-size:13px">${f}</td><td class="wrap" style="font-size:13px">${s}</td></tr>`).join('')}</tbody></table></div>
+ <h2 style="margin-top:16px">Read from Datasphere (never copied)</h2><p>Staff (badge, name, job, department, area, training status), departments and department heads (CPH), areas and facilities, public holiday calendar.</p>
+ <h2 style="margin-top:16px">Roles</h2><div class="tbl"><table><thead><tr><th>Role</th><th class="wrap">Can do</th></tr></thead><tbody>
+ <tr><td>EPPU admin</td><td class="wrap">Master lists and settings, generate the plan, submit to OEMC, send to MOH / MSMD, record drill day, reopen gaps</td></tr>
+ <tr><td>Proponent</td><td class="wrap">Pick dates, request changes and redos, write scripts, prepare and sign reports (own department)</td></tr>
+ <tr><td>OEMC reviewer</td><td class="wrap">Approve or return the plan, change requests and scripts; concur on reports</td></tr>
+ <tr><td>Observer</td><td class="wrap">Drill-day checklist, participants, findings, result; postpone</td></tr>
+ <tr><td>Code reviewer</td><td class="wrap">Second signature on reports for their colour code (master list)</td></tr>
+ <tr><td>DOM approver</td><td class="wrap">Final report approval, which creates the gaps</td></tr>
+ <tr><td>Gap owner / CPH</td><td class="wrap">Update and close own department's gaps; receives escalations</td></tr></tbody></table></div>
+ <h2 style="margin-top:16px">Integrations</h2><ul class="list"><li>Datasphere (BDC): master data in, app records out for SAC dashboards.</li><li>SAP S/4HANA PM: maintenance request for facility gaps (Integration Suite).</li>
+ <li>Datix: incident record for overdue gaps (Integration Suite).</li><li>Email and reminders: SAP Build Process Automation.</li><li>MOH / Aramco MSMD: schedule export, format to confirm.</li></ul></div>
+ <p class="muted" style="font-size:13px">All names, departments and records are fictional. Changes are saved only in this browser.</p>`}
+
+/* ---------- Drawer and modals ---------- */
+function drawer(){const d=drill(UI.drawer);if(!d)return'';const w=warns(d),c=code(d.code);
+ return`<div class="overlay" onclick="if(event.target===this)A.close()"><div class="drawer">
+ <div class="row" style="justify-content:space-between"><span class="mono muted">${d.id}</span><button class="btn sm" onclick="A.close()">Close</button></div>
+ <h1 style="margin-top:8px">${cdot(d.code)}${c.name} · ${area(d.area).name}</h1><div>${chip(d.status)}${d.redo?' '+chip('Redo'):''}</div>
+ <dl class="kv"><dt>Meaning</dt><dd>${c.meaning}</dd><dt>Required period</dt><dd>${d.label}${d.shift?' · '+d.shift+' shift':''} (${fmt(d.start)} to ${fmt(d.end)})</dd>
+ <dt>Proponent</dt><dd>${esc(dept(d.dept).name)}<div class="muted">CPH: ${esc(dept(d.dept).head)}</div></dd><dt>Rule</dt><dd>${FREQ[d.freq]} in ${d.area}</dd>
+ <dt>Planned date</dt><dd>${fmtd(d.planned)}</dd><dt>Original approved</dt><dd>${fmtd(d.original)}</dd><dt>Current date</dt><dd>${fmtd(d.current)}</dd>
+ <dt>Changes</dt><dd>${d.changes}</dd>${d.notDoneDate?`<dt>Not completed</dt><dd>${fmt(d.notDoneDate)}: ${esc(d.notDoneReason)}</dd>`:''}${d.doneDate?`<dt>Completed</dt><dd>${fmtd(d.doneDate)} ${d.doneDate===d.original?chip('On approved date'):chip('Off approved date')}</dd>`:''}</dl>
+ ${w.length?`<div class="msgs">${w.map(x=>`<div class="w">⚠ ${esc(x)}</div>`).join('')}</div>`:''}
+ <div class="row" style="margin:14px 0">${canEditDate(d)?`<label class="row" style="gap:8px">Date <input type="date" min="${d.start}" max="${d.end}" value="${d.planned||''}" onchange="A.setDate('${d.id}',this.value)" style="border:1px solid var(--line);border-radius:6px;padding:5px 8px"></label>`:''}
+ ${canChange(d)?`<button class="btn primary" onclick="A.modal('${d.status==='Redo required'?'redo':'change'}','${d.id}')">${d.status==='Redo required'?'Request redo':'Request change'}</button>`:''}
+ ${d.script?`<button class="btn" onclick="A.openScript('${d.id}')">${canEditScript(d)?'Edit script':'View script'}</button>`:''}
+ ${canRun(d)?`<button class="btn primary" onclick="A.openRun('${d.id}')">Drill day</button>`:''}
+ ${d.run&&d.run.result?`<button class="btn" onclick="UI.rid='${d.id}';A.go('run')">Drill-day record</button>`:''}
+ ${d.aar?`<button class="btn ${canSignAAR(d)?'primary':''}" onclick="A.openAAR('${d.id}')">After Action Report</button>`:''}
+ ${S.gaps.some(g=>g.drill===d.id)?`<button class="btn" onclick="UI.gf={status:'',type:'',owner:'',q:'${d.id}',esc:''};A.go('gaps')">Gaps (${S.gaps.filter(g=>g.drill===d.id).length})</button>`:''}</div>
+ ${d.aar?`<dl class="kv"><dt>Report</dt><dd>${chip(d.aar.status)} due ${fmt(d.aar.due)} · ${d.aar.sigs.length} of 4 signatures</dd></dl>`:''}
+ ${canRecord(d)&&!scriptOk(d)?'<p class="e" style="font-size:13px">The drill date has come but the script is not approved, so drill day cannot be recorded (setting).</p>':''}
+ ${d.script?`<dl class="kv"><dt>Script</dt><dd>${chip(d.script.status)} due ${fmt(d.script.due)}${d.script.rounds.length?` · ${d.script.rounds.length} review round(s)`:''}</dd>
+ ${d.run&&d.run.result?`<dt>Drill day</dt><dd>${d.run.participants.length} participants · ${d.run.findings.length} finding(s)${d.run.findings.some(f=>f.gap)?` · <span class="w">${d.run.findings.filter(f=>f.gap).length} possible gap(s)</span>`:''}</dd>`:''}</dl>`:''}
+ <h2 style="margin-top:20px">History</h2><div class="hist">${d.history.slice().reverse().map(h=>`<div><div class="at">${fmt(h.at)} · ${esc(h.who)}</div>${esc(h.text)}</div>`).join('')}</div></div></div>`}
+function modal(){const m=UI.modal;if(!m)return'';let h='';
+ if(m.type==='change'||m.type==='redo'){const d=drill(m.id),redo=m.type==='redo';const min=addDays(S.demoDate,1);
+  h=`<h2>${redo?'Request a redo':'Request a date change'} · <span class="mono">${d.id}</span></h2>
+  <p class="muted">${redo?`Not completed on ${fmt(d.notDoneDate)}. The redo must be in the same month.`:`Current date ${fmtd(d.current)}. Original approved date ${fmt(d.original)} is kept.`}</p>
+  <div class="field"><label>New date</label><input id="m-to" type="date" min="${min}" max="${YEAR}-12-31" oninput="liveCheck('${d.id}','${m.type}')"></div><div id="m-chk" class="msgs"></div>
+  <div class="field"><label>Reason</label><select id="m-r"><option value="">Choose…</option>${REASONS.map(r=>`<option ${redo&&r.startsWith('Drill not')?'selected':''}>${r}</option>`).join('')}</select></div>
+  <div class="field"><label>Comment</label><textarea id="m-c" placeholder="Optional"></textarea></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn primary" onclick="A.requestChange('${d.id}',val('m-to'),val('m-r'),val('m-c'),'${m.type}')">Send to OEMC</button></div>`}
+ if(m.type==='outcome'){const d=drill(m.id);h=`<h2>Record outcome · <span class="mono">${d.id}</span></h2><p class="muted">Drill date ${fmtd(d.current)}.</p>
+  <div class="field"><label>Result</label><select id="m-res" onchange="document.getElementById('m-rw').style.display=this.value==='Completed'?'none':'grid'"><option>Completed</option><option>Not completed</option></select></div>
+  <div class="field" id="m-rw" style="display:none"><label>Why was it not completed?</label><textarea id="m-why"></textarea></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn primary" onclick="A.record('${d.id}',val('m-res'),val('m-why'))">Save</button></div>`}
+ if(m.type==='areturn')h=`<h2>Return report ${m.id} to the proponent</h2><div class="field"><label>What must change? (required)</label><textarea id="m-c"></textarea></div>
+  <p class="muted" style="font-size:13px">All signatures are cleared and the report goes back to Draft.</p>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn danger" onclick="A.aReturn('${m.id}',val('m-c'))">Return</button></div>`;
+ if(m.type==='gclose'||m.type==='gnote')h=`<h2>${m.type==='gclose'?'Close gap':'Add a note to'} ${m.id}</h2><div class="field"><label>${m.type==='gclose'?'What was done? (evidence, required)':'Note'}</label><textarea id="m-c"></textarea></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn ${m.type==='gclose'?'ok':'primary'}" onclick="${m.type==='gclose'?`A.gStatus('${m.id}','Closed',val('m-c'))`:`A.gNote('${m.id}',val('m-c'))`}">${m.type==='gclose'?'Close gap':'Add note'}</button></div>`;
+ if(m.type==='sreturn')h=`<h2>Return script ${m.id} with comments</h2><div class="field"><label>What must the proponent change? (required)</label><textarea id="m-c">${esc(drill(m.id).script.warnings.join('\n'))}</textarea></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn danger" onclick="A.sDecide('${m.id}',false,val('m-c'))">Return</button></div>`;
+ if(m.type==='return'||m.type==='reject')h=`<h2>${m.type==='return'?'Return '+unitName(m.id)+' to EPPU':'Reject '+m.id}</h2><div class="field"><label>Comment (required)</label><textarea id="m-c"></textarea></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="UI.modal=null;render()">Cancel</button><button class="btn danger" onclick="${m.type==='return'?`A.returnUnit('${m.id}',val('m-c'))`:`A.decide('${m.id}',false,val('m-c'))`}">${m.type==='return'?'Return':'Reject'}</button></div>`;
+ return`<div class="modalwrap" onclick="if(event.target===this){UI.modal=null;render()}"><div class="modal">${h}</div></div>`}
+const val=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
+function liveCheck(id,mode){const v=val('m-to'),el=document.getElementById('m-chk');if(!v){el.innerHTML='';return}const r=check(drill(id),v,mode);
+ el.innerHTML=r.e.map(x=>`<div class="e">✕ ${esc(x)}</div>`).join('')+r.w.map(x=>`<div class="w">⚠ ${esc(x)}</div>`).join('')+(!r.e.length&&!r.w.length?'<div class="ok">✓ No conflicts found</div>':'')}
+
+/* ---------- Shell ---------- */
+const PAGES=[['Work',[['overview','Overview'],['kpi','KPI dashboard'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy'],['scripts','Drill scripts'],['day','Drill day'],['reports','After Action Reports'],['gaps','Gaps']]],
+ ['Data',[['master','Master lists'],['emails','Email log']]],['Help',[['guide','How to use'],['about','About this demo']]]];
+function render(){const n=counts();const props=[...new Set(S.drills.length?S.drills.map(d=>d.dept):CODES.flatMap(c=>AREAS.map(a=>proponentFor(c.id,a.id))))];
+ if(UI.page==='data')UI.page='overview';
+ const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,reports:pReports,aar:pAAR,gaps:pGaps,kpi:pKPI,master:pMaster,emails:pEmails,about:pAbout,guide:pGuide}[UI.page]();
+ document.getElementById('app').innerHTML=`<header class="shell"><div class="brand"><svg class="sap" viewBox="0 0 92 45.4" role="img" aria-label="SAP"><defs><linearGradient id="sapg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00B8F1"/><stop offset=".22" stop-color="#06A5E5"/><stop offset=".79" stop-color="#1870C5"/><stop offset="1" stop-color="#1D61BC"/></linearGradient></defs><path d="M0 45.4h46.4L91.8 0H0z" fill="url(#sapg)"/><text x="7" y="32" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="24" fill="#fff" letter-spacing="-.5">SAP</text></svg><span class="sep"></span>EPPU Drill Manager</div><span class="demo-tag">Demo · sample data</span><span class="sp"></span>
+ <label>View as <select onchange="A.setRole(this.value)">${Object.entries(ROLE_NAMES).map(([k,l])=>`<option value="${k}" ${S.role===k?'selected':''}>${l}</option>`).join('')}</select></label>
+ ${S.role==='proponent'||S.role==='owner'?`<label>Dept <select onchange="A.setDept(this.value)">${DEPTS.filter(d=>S.role==='owner'?(!S.gaps.length||S.gaps.some(g=>g.owner===d.id)):props.includes(d.id)).map(d=>`<option value="${d.id}" ${S.dept===d.id?'selected':''}>${esc(d.name)}${S.role==='owner'?` (${S.gaps.filter(g=>g.owner===d.id&&g.status!=='Closed').length} open)`:''}</option>`).join('')}</select></label>`:''}
+ <label>Demo date <input type="date" value="${S.demoDate}" onchange="A.setDate0(this.value)"></label>
+ <button class="btn sm" onclick="A.reset(S.demoDate>'2026-01-01'?'mid':'fresh')" title="Restore the sample data in this browser">Reset</button></header>
+ <div class="layout"><nav>${PAGES.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([k,l])=>`<button class="${UI.page===k?'on':''}" onclick="A.go('${k}')"><span>${l}</span>${(b=>b?`<span class="badge">${b}</span>`:'')({approvals:n.appr,scripts:n.scripts,day:n.day,reports:n.reports,gaps:n.gaps}[k])}</button>`).join('')).join('')}</nav>
+ <main>${page}</main></div>${drawer()}${gapDrawer()}${modal()}`;
+ renderTable()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(UI.drawer||UI.modal||UI.gap))A.close()});
+render();
+</script>
+</body>
+</html>
