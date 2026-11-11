@@ -3,11 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EPPU Drill Manager · SAP edition</title>
+<title>EPPU Drill Manager · Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--navy:#001A4E;--blue:#0057D9;--cyan:#0096D6;--purple:#003399;--gold:#E8A100;--glow:#B8D4FF;--ice:#B8D4FF;--bg:#EEF3FF;--surface:#fff;--ink:#0A1428;--muted:#6B82B0;--line:#C8D8FF;
---ok:#188918;--okbg:#E5F5E5;--warn:#E76500;--warnbg:#FFF0E0;--err:#CC0000;--errbg:#FFEBEB;--info:#0057D9;--infobg:#E4ECFF;--pur:#003399;--purbg:#E4ECFF;--grey:#1A2B52;--greybg:#E4ECFF;
---font:Arial,'Helvetica Neue',Helvetica,sans-serif;--mono:Arial,'Helvetica Neue',Helvetica,sans-serif}
+:root{--navy:#00123B;--blue:#2A66DD;--cyan:#1DC8DF;--purple:#753BBD;--ice:#CED9E5;--bg:#F4F6F9;--surface:#fff;--ink:#0B1630;--muted:#5A6782;--line:#DCE3EC;
+--ok:#1E7A4F;--okbg:#E4F3EB;--warn:#94600F;--warnbg:#FCF1DC;--err:#B42727;--errbg:#FBE8E8;--info:#1F4FB0;--infobg:#E6EEFC;--pur:#5B2D96;--purbg:#EFE7F9;--grey:#4A556B;--greybg:#EBEEF3;
+--font:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'IBM Plex Mono',ui-monospace,Consolas,monospace}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font)}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -117,54 +119,55 @@ td input[type=date]{padding:3px 6px}
 @media (max-width:860px){.layout{grid-template-columns:1fr}nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}nav .grp{display:none}nav button{white-space:nowrap}main{padding:18px 16px 60px}.grid2{grid-template-columns:1fr}.kv{grid-template-columns:120px 1fr}}
 @media print{.shell,nav,.noprint{display:none!important}.layout{display:block}main{padding:0}.card,.tbl{border:0}}
 
-/* ---- SAP command-center look ---- */
-.shell{background:linear-gradient(90deg,#001A4E 0%,#003399 60%,#0057D9 100%);box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.brand .sap{display:block;height:28px;width:56px;object-fit:contain;flex-shrink:0}
-.brand .sep{width:1px;height:22px;background:rgba(255,255,255,.35)}
-.demo-tag{background:rgba(232,161,0,.18);color:#FFD36B;letter-spacing:.04em}
-.shell select,.shell input{background:rgba(0,26,78,.55);border-color:rgba(184,212,255,.4)}
-.shell .btn{border-color:rgba(184,212,255,.5)}
-nav{background:linear-gradient(180deg,#001A4E 0%,#002266 100%);border-right:0;padding:10px 0}
-nav button{color:rgba(255,255,255,.72);border-radius:0;border-left:3px solid transparent;padding:9px 14px;font-size:13.5px}
-nav button:hover{background:rgba(255,255,255,.08);color:#fff}
-nav button.on{background:linear-gradient(90deg,rgba(0,86,217,.45),rgba(0,86,217,.1));color:#fff;border-left-color:var(--gold);font-weight:700}
-nav .grp{color:rgba(255,255,255,.38);font-weight:700;letter-spacing:.12em;font-size:10.5px}
-main h1{color:var(--navy)}
-.card,.tbl,.tile{border-color:var(--line);box-shadow:0 1px 4px rgba(0,26,78,.07)}
-.tile{border-top:3px solid var(--blue)}
-.tile.good{border-top-color:var(--ok)}.tile.bad{border-top-color:var(--err)}
-th{background:#F2F6FF;color:var(--s,#003399);font-weight:700;font-size:11px}
-.btn.primary{background:linear-gradient(135deg,#0057D9,#003399);border-color:#003399;box-shadow:0 2px 8px rgba(0,51,153,.25)}
-.btn.primary:hover{background:linear-gradient(135deg,#0057D9,#001A4E)}
-.btn:hover{border-color:var(--blue)}
-.note{border-left-color:var(--gold);background:#FFF8E6;color:#4A3500}
-.banner{border-color:#89B4F5;background:#F7FAFF}
-.tabs button.on{color:var(--blue);border-color:var(--gold)}
-.toast{background:linear-gradient(90deg,#001A4E,#003399);border-bottom:2px solid var(--gold)}
-/* ---- exact template details ---- */
-.shell{min-height:52px;padding:8px 20px}
-.brand{font-size:14px}
-.layout{grid-template-columns:250px minmax(0,1fr)}
-nav button{font-size:12.5px}
-main{padding:0 26px 60px}
-.sc-head{background:linear-gradient(135deg,#001A4E 0%,#003399 100%);border-bottom:2px solid var(--gold);margin:0 -26px 20px;padding:18px 26px;position:sticky;top:52px;z-index:10}
-.sc-head h1{color:#fff;font-size:18px;margin:0}
-.sc-head .sub{color:rgba(255,255,255,.72);margin:2px 0 0;font-size:13px}
-.sc-head .sub b,.sc-head .sub a{color:#fff}
-.sc-head .sub .chip{background:rgba(255,255,255,.15);color:#fff}
-main>.sc-pad{height:20px}
-thead th,th{background:linear-gradient(90deg,#001A4E,#003399);color:#fff;font-weight:700;font-size:11px;letter-spacing:.3px;border-bottom:2px solid #0057D9;text-transform:none;font-family:var(--font)}
-tbody tr:hover{background:var(--bg)}
-.tile{border-radius:10px;border-top-width:4px;box-shadow:0 2px 12px rgba(0,51,153,.1);border-left:0;border-right:0;border-bottom:0}
-.tile .v{font-weight:300;color:var(--blue)}
-.tile .k{font-weight:700;font-size:10.5px;color:var(--muted)}
-.card{border-radius:8px;border:0;box-shadow:0 1px 4px rgba(0,0,0,.07)}
-.chip{border-radius:12px;font:700 10.5px/1.9 var(--font);padding:0 9px}
-.c-ok{background:#E8F5E9;color:#1B5E20}.c-warn{background:#FFF8E1;color:#7A5300}.c-err{background:#FFEBEE;color:#8B0000}
-.c-info{background:#E3F2FD;color:#0D47A1}.c-pur{background:#F3E5F5;color:#4A148C}.c-grey{background:#E4ECFF;color:#1A2B52}
-.badge{background:#CC0000}
-@media (max-width:860px){.layout{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start}nav{align-self:start}main{padding:0 14px 60px}.sc-head{margin:0 -14px 16px;padding:14px;position:static}}
-@media (max-width:860px){nav{padding:6px}nav button{border-left:0;border-bottom:3px solid transparent}nav button.on{border-bottom-color:var(--gold)}}
+/* ==== SAP edition: logo size ==== */
+.brand .sap{display:block;height:26px;width:52px;object-fit:contain;flex-shrink:0}
+.brand .sep{width:1px;height:22px;background:rgba(255,255,255,.3)}
+/* ==== SAP edition: Dark Horizon colours (screen only; print keeps the original light colours) ==== */
+@media screen{
+:root{--navy:#0A1121;--blue:#1B90FF;--cyan:#0096D6;--purple:#7B5CFF;--ice:#3A4D78;--bg:#0B1324;--surface:#111B31;--ink:#E8EEF9;--muted:#8EA0C4;--line:#1F2C49;
+--ok:#2FBF71;--okbg:rgba(47,191,113,.14);--warn:#F0A52A;--warnbg:rgba(240,165,42,.14);--err:#FF5C6C;--errbg:rgba(255,92,108,.14);--info:#5AAEFF;--infobg:rgba(27,144,255,.15);--pur:#A58CFF;--purbg:rgba(123,92,255,.16);--grey:#D4DEF0;--greybg:#1B2742}
+html{color-scheme:dark;background:#0A1020}
+body{background:radial-gradient(1100px 520px at 18% -8%,#16305E 0%,rgba(22,48,94,0) 60%),linear-gradient(180deg,#0B1324 0%,#0A1020 100%);background-attachment:fixed}
+a{color:#5AAEFF}
+h1{color:#fff} h2{color:#DCE6F7}
+.shell{background:rgba(10,17,33,.94);border-bottom:1px solid #1E2B49}
+.demo-tag{background:rgba(27,144,255,.16);color:#7FB8FF}
+.shell label{color:#9FB3D9}
+.shell select,.shell input{background:#0E1830;border-color:#223253;color:#DCE6F7}
+.shell .btn{background:#0E1830;border-color:#223253;color:#fff}
+.layout{background:transparent}
+nav{background:linear-gradient(180deg,#0C1528 0%,#0A1020 100%);border-right-color:#16223C}
+nav button{color:#AEBFE0}
+nav button:hover{background:rgba(123,140,255,.12);color:#fff}
+nav button.on{background:linear-gradient(135deg,#1B90FF,#7B5CFF);color:#fff;box-shadow:0 8px 22px rgba(80,90,255,.4)}
+nav .grp{color:#5F77A8}
+.card,.tile,.tbl{box-shadow:0 10px 26px rgba(0,0,0,.28)}
+th{background:linear-gradient(90deg,#16223D,#1B2949);color:#CDD9F0;border-bottom-color:#26365A}
+td{color:#C6D2EA}
+tbody tr.click:hover{background:#16213B}
+.btn{background:#1A2746;border-color:#28375C;color:#CDD9F0}
+.btn:hover{border-color:#1B90FF;color:#fff}
+.btn.primary{background:linear-gradient(135deg,#1B90FF,#7B5CFF);border-color:transparent;color:#fff;box-shadow:0 8px 18px rgba(80,90,255,.38)}
+.btn.primary:hover{background:linear-gradient(135deg,#0F80EE,#6A4BEE)}
+.btn.ok{color:#fff}
+.btn.danger{background:#1A2746;color:#FF5C6C;border-color:#5C2B3B}
+.filters select,.filters input,.field input,.field select,.field textarea,td input[type=date],td select,.big,.seg button{background:#0E1830;border-color:#273655;color:#E6ECF7}
+.seg{border-color:#273655}.seg button{border-right-color:#273655}
+.note{background:#0E1A33;border-left-color:#1B90FF;color:#BCC9E6}
+.banner{background:#111B31;border-color:#28375C}
+.email{background:#111B31}
+.tabs button.on{color:#7FB8FF;border-color:#1B90FF}
+.chip.c-ok{background:#E8F5E9;color:#1B5E20}.chip.c-warn{background:#FFF8E1;color:#7A5300}.chip.c-err{background:#FFEBEE;color:#8B0000}
+.chip.c-info{background:#E3F2FD;color:#0D47A1}.chip.c-pur{background:#F3E5F5;color:#4A148C}.chip.c-grey{background:#1B2742;color:#D4DEF0}
+.dot{border-color:rgba(255,255,255,.25)}
+.sig.next{background:rgba(240,165,42,.08)}
+.overlay{background:rgba(6,12,26,.74)}
+.modalwrap{background:rgba(6,12,26,.74)}
+.drawer{background:#111B31;border-left:1px solid #273655;box-shadow:-8px 0 30px rgba(0,0,0,.5)}
+.modal{background:#111B31;border:1px solid #273655}
+.toast{background:linear-gradient(135deg,#1B90FF,#7B5CFF);border:1px solid rgba(255,255,255,.18);box-shadow:0 12px 30px rgba(80,90,255,.5)}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#223253;border-radius:5px}::-webkit-scrollbar-track{background:transparent}
+}
 </style>
 </head>
 <body>
@@ -177,7 +180,7 @@ tbody tr:hover{background:var(--bg)}
    =================================================================== */
 const KEY='eppu-drill-demo-sap-v1', YEAR=2026;
 
-/* ---------- Sample master data (read-only) ---------- */
+/* ---------- Sample "Datasphere" master data (read-only) ---------- */
 const AREAS=[
  {id:'DH',name:'Dhahran',facility:'Main hospital',type:'Inpatient + ER'},
  {id:'AH',name:'Al-Hasa',facility:'Al-Hasa health center',type:'Inpatient + ER'},
@@ -1256,11 +1259,7 @@ function liveCheck(id,mode){const v=val('m-to'),el=document.getElementById('m-ch
 /* ---------- Shell ---------- */
 const PAGES=[['Work',[['overview','Overview'],['kpi','KPI dashboard'],['plan','Annual plan'],['approvals','Approvals'],['changes','Change control'],['moh','MOH / MSMD copy'],['scripts','Drill scripts'],['day','Drill day'],['reports','After Action Reports'],['gaps','Gaps']]],
  ['Data',[['master','Master lists'],['emails','Email log']]],['Help',[['guide','How to use'],['about','About this demo']]]];
-function scHead(){const m=document.querySelector('main');if(!m)return;const h=m.querySelector(':scope>h1');if(!h)return;
- const b=document.createElement('div');b.className='sc-head';m.insertBefore(b,h);b.appendChild(h);
- const n=b.nextElementSibling;if(n&&n.matches('p.sub'))b.appendChild(n)}
 function render(){const n=counts();const props=[...new Set(S.drills.length?S.drills.map(d=>d.dept):CODES.flatMap(c=>AREAS.map(a=>proponentFor(c.id,a.id))))];
- if(UI.page==='data')UI.page='overview';
  const page={overview:pOverview,plan:pPlan,approvals:pApprovals,changes:pChanges,moh:pMOH,scripts:pScripts,script:pScript,day:pDay,run:pRun,reports:pReports,aar:pAAR,gaps:pGaps,kpi:pKPI,master:pMaster,emails:pEmails,about:pAbout,guide:pGuide}[UI.page]();
  document.getElementById('app').innerHTML=`<header class="shell"><div class="brand"><img class="sap" src="sap-logo.png" alt="SAP"><span class="sep"></span>EPPU Drill Manager</div><span class="demo-tag">Demo · sample data</span><span class="sp"></span>
  <label>View as <select onchange="A.setRole(this.value)">${Object.entries(ROLE_NAMES).map(([k,l])=>`<option value="${k}" ${S.role===k?'selected':''}>${l}</option>`).join('')}</select></label>
@@ -1268,7 +1267,7 @@ function render(){const n=counts();const props=[...new Set(S.drills.length?S.dri
  <label>Demo date <input type="date" value="${S.demoDate}" onchange="A.setDate0(this.value)"></label>
  <button class="btn sm" onclick="A.reset(S.demoDate>'2026-01-01'?'mid':'fresh')" title="Restore the sample data in this browser">Reset</button></header>
  <div class="layout"><nav>${PAGES.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([k,l])=>`<button class="${UI.page===k?'on':''}" onclick="A.go('${k}')"><span>${l}</span>${(b=>b?`<span class="badge">${b}</span>`:'')({approvals:n.appr,scripts:n.scripts,day:n.day,reports:n.reports,gaps:n.gaps}[k])}</button>`).join('')).join('')}</nav>
- <main>${page}</main></div>${drawer()}${gapDrawer()}${modal()}`;scHead();
+ <main>${page}</main></div>${drawer()}${gapDrawer()}${modal()}`;
  renderTable()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(UI.drawer||UI.modal||UI.gap))A.close()});
 render();
